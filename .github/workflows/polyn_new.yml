@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: .polyn_new/
+        working-directory: ./polyn_new
 
     steps:
     - uses: actions/checkout@v3
@@ -29,7 +29,7 @@ jobs:
       with:
         elixir-version: '1.12.3' # Define the elixir version [required]
         otp-version: '24' # Define the OTP version [required]
-        working-directory: .polyn_new/
+        working-directory: ./polyn_new
     - name: Restore dependencies cache
       uses: actions/cache@v3
       with:
