@@ -10,12 +10,15 @@ name: Polyn-cli
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'polyn_cli/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'polyn_cli/**'
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,6 +34,7 @@ jobs:
     # uses: ruby/setup-ruby@v1
       uses: ruby/setup-ruby@473e4d8fe5dd94ee328fdfca9f8c9c7afc9dae5e
       with:
+        working-directory: ./polyn_cli
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Run tests
