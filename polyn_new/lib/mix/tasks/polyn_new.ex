@@ -98,7 +98,7 @@ defmodule Mix.Tasks.Polyn.New do
 
   defp copy_docker_yml(args) do
     Mix.Generator.copy_file(
-      "docker-compose.yml",
+      Application.app_dir(:polyn_new, "priv/docker-compose.yml"),
       Path.join([args.base_dir, args.app, "docker-compose.yml"])
     )
   end

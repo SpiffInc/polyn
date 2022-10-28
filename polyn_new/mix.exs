@@ -11,7 +11,14 @@ defmodule PolynNew.MixProject do
       start_permanent: Mix.env() == :prod,
       source_url: @github,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      package: [
+        maintainers: [
+          "Brandyn Bennett"
+        ],
+        licenses: ["Apache-2.0"],
+        links: %{"GitHub" => @github}
+      ]
     ]
   end
 
