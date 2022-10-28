@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Get all the `lib` files loadable
+$LOAD_PATH << File.join(File.expand_path("..", __dir__), "lib")
+require "polyn/cli"
+
+Polyn::Cli.start(ARGV)

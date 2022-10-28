@@ -1,0 +1,49 @@
+name: Polyn Elixir Client
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'polyn_elixir_client/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'polyn_elixir_client/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    name: Build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./polyn_elixir_client
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Start NATS Jetstream
+      run: docker run --rm -d --network host nats:latest -js
+    - name: Set up Elixir
+      uses: erlef/setup-beam@988e02bfe678367a02564f65ca2e37726dc0268f
+      with:
+        elixir-version: '1.12.3' # Define the elixir version [required]
+        otp-version: '24' # Define the OTP version [required]
+        working-directory: ./polyn_elixir_client
+    - name: Restore dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: deps
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+        working-directory: ./polyn_elixir_client
+    - name: Install dependencies
+      run: mix deps.get
+    - name: Check format
+      run: mix format --check-formatted
+    - name: Lint
+      run: mix lint
+    - name: Run tests
+      run: mix test
