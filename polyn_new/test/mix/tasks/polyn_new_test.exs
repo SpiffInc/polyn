@@ -4,11 +4,6 @@ defmodule Mix.Tasks.Polyn.NewTest do
   @moduletag :tmp_dir
   import Mix.Polyn
 
-  setup do
-    IO.inspect(File.cwd!(), label: "ROOT")
-    :ok
-  end
-
   describe "mix project" do
     test "creates a new mix project", %{tmp_dir: tmp_dir} do
       Mix.Task.rerun("polyn.new", [tmp_dir])
