@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary               = "CLI for the Polyn service framework"
   spec.description           = "CLI for the Polyn service framework"
-  spec.homepage              = "https://github.com/SpiffInc/polyn/polyn-cli"
+  spec.homepage              = "https://github.com/SpiffInc/polyn/tree/main/polyn_cli"
   spec.license               = "MIT"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
 

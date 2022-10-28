@@ -1,12 +1,15 @@
 defmodule PolynNew.MixProject do
   use Mix.Project
 
+  @github "https://github.com/SpiffInc/polyn/tree/main/polyn_new"
+
   def project do
     [
       app: :polyn_new,
       version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
+      source_url: @github,
       deps: deps(),
       aliases: aliases()
     ]
