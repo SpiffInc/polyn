@@ -1,6 +1,6 @@
-defmodule PolynExample do
+defmodule PolynHive do
   @moduledoc """
-  Documentation for `PolynExample`.
+  Documentation for `PolynHive`.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule PolynExample do
 
   ## Examples
 
-      iex> PolynExample.hello()
+      iex> PolynHive.hello()
       :world
 
   """

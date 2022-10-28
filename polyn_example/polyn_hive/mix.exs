@@ -1,11 +1,11 @@
-defmodule PolynExample.MixProject do
+defmodule PolynHive.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :polyn_example,
+      app: :polyn_hive,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.14.0",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -15,14 +15,14 @@ defmodule PolynExample.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {PolynExample.Application, []}
+      mod: {PolynHive.Application, []}
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:polyn_events, path: "../polyn_events"}
+      {:polyn_events, "~> 0.1.0"},
     ]
   end
 end
