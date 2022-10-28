@@ -1,7 +1,7 @@
 defmodule Polyn.MixProject do
   use Mix.Project
 
-  @github "https://github.com/SpiffInc/polyn-elixir"
+  @github "https://github.com/SpiffInc/polyn/polyn_elixir_client"
 
   def version, do: "0.3.0"
 
