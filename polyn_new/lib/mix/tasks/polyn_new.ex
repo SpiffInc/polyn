@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Polyn.New do
 
   Defaults to current working directory, but you can pass an optional path to generate in
 
-  An `--app` option can be passed to override the default `polyn_admin` name
+  An `--app` option can be passed to override the default `polyn_hive` name
   """
   @shortdoc "Generates boilerplate for a Polyn project"
 

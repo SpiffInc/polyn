@@ -19,7 +19,7 @@ environment.
 
 ## Naming Conventions
 
-See the Protocol Documentation for [Naming Conventions](https://github.com/SpiffInc/polyn-protocol/blob/main/NAMING_CONVENTIONS.md)
+See the Protocol Documentation for [Naming Conventions](https://github.com/SpiffInc/polyn/blob/main/polyn_protocol/README.md)
 
 ## Streams
 
