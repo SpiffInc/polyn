@@ -2,11 +2,11 @@ name: Elixir CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [main]
     paths:
       - 'polyn_elixir_client/**'
   pull_request:
-    branches: [ master ]
+    branches: [main]
     paths:
       - 'polyn_elixir_client/**'
 
