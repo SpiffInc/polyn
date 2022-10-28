@@ -9,7 +9,7 @@ informed:
 
 ## Context and Problem Statement
 
-There are multiple Elixir libraries involved with working in the Polyn ecosytem. It's faster to iterate when they're all in one place
+There are multiple libraries involved with working in the Polyn ecosytem. It's faster to iterate when they're all in one place
 
 ## Decision Drivers
 
@@ -24,7 +24,7 @@ There are multiple Elixir libraries involved with working in the Polyn ecosytem.
 
 ## Decision Outcome
 
-Chose to do a monorepo for Elixir libraries related to Polyn. Will be publishing each to Hex as if it were in its own codebase so that each package can be used independently.
+Chose to do a monorepo for libraries related to Polyn. Will be publishing each separately to package manger as if it were in its own codebase so that each package can be used independently.
 
 ### Positive Consequences
 
