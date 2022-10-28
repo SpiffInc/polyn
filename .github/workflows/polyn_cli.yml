@@ -33,7 +33,6 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - name: Change Directory
-      run: cd polyn_cli
     - name: Run tests
+      working-directory: ./polyn_cli
       run: bundle exec rspec spec
