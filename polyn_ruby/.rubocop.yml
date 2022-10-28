@@ -1,0 +1,44 @@
+Layout/ExtraSpacing:
+  ForceEqualSignAlignment: true
+
+Layout/ArgumentAlignment:
+  EnforcedStyle: with_fixed_indentation
+
+Layout/IndentationWidth:
+  IgnoredPatterns: []
+
+Layout/HashAlignment:
+  EnforcedColonStyle: table
+  EnforcedHashRocketStyle: table
+
+Layout/LineLength:
+  Max: 100
+  IgnoreCopDirectives: true
+
+Layout/EmptyLineAfterMagicComment:
+  Enabled: true
+
+Metrics/MethodLength:
+  Max: 15
+
+Metrics/BlockLength:
+  Exclude: ["spec/**/*_spec.rb"]
+
+Style/ModuleFunction:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  SafeAutoCorrect: true
+
+Style/StringLiterals:
+    EnforcedStyle: "double_quotes"

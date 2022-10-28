@@ -1,0 +1,6 @@
+.git
+tf/.terraform
+tf/*.tfstate
+tf/*.backup
+# We don't ignore the terraform lockfile because it ensures that
+# the provider dependency versions are consistent
