@@ -9,9 +9,9 @@ defmodule Mix.Tasks.Polyn.NewTest do
       Mix.Task.rerun("polyn.new", [tmp_dir])
 
       assert mix_file = Path.join(tmp_dir, "#{default_app_name()}/mix.exs") |> File.read!()
-      assert mix_file =~ "app: :polyn_admin"
+      assert mix_file =~ "app: :polyn_hive"
       assert mix_file =~ "{:polyn_events, \"~> 0.1.0\"}"
-      assert mix_file =~ "mod: {PolynAdmin.Application"
+      assert mix_file =~ "mod: {PolynHive.Application"
     end
 
     test "does not create a mix project if already in one", %{tmp_dir: tmp_dir} do
@@ -50,7 +50,7 @@ defmodule Mix.Tasks.Polyn.NewTest do
                )
                |> File.read!()
 
-      assert contents =~ "PolynAdmin.CommandedApplication"
+      assert contents =~ "PolynHive.CommandedApplication"
       assert contents =~ "use Commanded.Application, otp_app: :#{default_app_name()}"
     end
 
@@ -75,7 +75,7 @@ defmodule Mix.Tasks.Polyn.NewTest do
                |> File.read!()
 
       assert contents =~ "import Config"
-      assert contents =~ "config :polyn_admin, PolynAdmin.CommandedApplication,"
+      assert contents =~ "config :polyn_hive, PolynHive.CommandedApplication,"
     end
 
     test "adds commanded_application config to existing config file", %{tmp_dir: tmp_dir} do
@@ -97,7 +97,7 @@ defmodule Mix.Tasks.Polyn.NewTest do
 
       assert contents =~ "import Config"
       assert contents =~ "config :foo, :bar"
-      assert contents =~ "config :polyn_admin, PolynAdmin.CommandedApplication,"
+      assert contents =~ "config :polyn_hive, PolynHive.CommandedApplication,"
     end
   end
 end
