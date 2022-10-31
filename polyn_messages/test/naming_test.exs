@@ -3,6 +3,11 @@ defmodule Polyn.NamingTest do
 
   alias Polyn.Naming
 
+  test "dot_to_colon/1" do
+    assert "com:acme:user:created:v1:schema:v1" ==
+             Naming.dot_to_colon("com.acme.user.created.v1.schema.v1")
+  end
+
   describe "validate_message_name!/1" do
     test "valid names that's alphanumeric and dot separated passes" do
       assert Naming.validate_message_name!("user.created") == :ok

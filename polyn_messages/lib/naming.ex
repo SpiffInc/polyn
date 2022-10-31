@@ -4,6 +4,19 @@ defmodule Polyn.Naming do
   """
 
   @doc """
+  Convert a dot separated name into a colon separated name
+
+  ## Examples
+
+      iex>Polyn.Naming.dot_to_colon("com.acme.user.created.v1.schema.v1")
+      "com:acme:user:created:v1:schema:v1"
+  """
+  @spec dot_to_colon(str :: binary()) :: binary()
+  def dot_to_colon(str) do
+    String.replace(str, ".", ":")
+  end
+
+  @doc """
   Validate the name of a message
 
   ## Examples
