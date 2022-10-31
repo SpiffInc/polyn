@@ -44,6 +44,7 @@ defmodule Mix.Tasks.Polyn.New do
     else
       Mix.Task.rerun("new", [Path.join([args.base_dir, args.app]), "--sup"])
       add_dependencies(args)
+      add_application_file(args)
     end
   end
 
@@ -51,6 +52,17 @@ defmodule Mix.Tasks.Polyn.New do
     Mix.Generator.create_file(
       Path.join([args.base_dir, args.app, "mix.exs"]),
       mix_exs_template(
+        app: String.to_atom(args.app),
+        base_module: args.base_module
+      ),
+      force: true
+    )
+  end
+
+  defp add_application_file(args) do
+    Mix.Generator.create_file(
+      Path.join([args.base_dir, args.app, "lib", args.app, "application.ex"]),
+      application_template(
         app: String.to_atom(args.app),
         base_module: args.base_module
       ),
@@ -160,5 +172,30 @@ defmodule Mix.Tasks.Polyn.New do
       ]
     end
   end
+  """)
+
+  Mix.Generator.embed_template(:application, """
+  defmodule <%= @base_module %>.Application do
+    # See https://hexdocs.pm/elixir/Application.html
+    # for more information on OTP Applications
+    @moduledoc false
+
+    use Application
+
+    @impl true
+    def start(_type, _args) do
+      children = [
+        # Starts a worker by calling: <%= @base_module %>.Worker.start_link(arg)
+        # {<%= @base_module %>.Worker, arg}
+        {<%= @base_module %>.CommandedApplication}
+      ]
+
+      # See https://hexdocs.pm/elixir/Supervisor.html
+      # for other strategies and supported options
+      opts = [strategy: :one_for_one, name: <%= @base_module %>.Supervisor]
+      Supervisor.start_link(children, opts)
+    end
+  end
+
   """)
 end
