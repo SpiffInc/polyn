@@ -44,13 +44,19 @@ defmodule Mix.Tasks.Polyn.Gen.Schema do
 
     Mix.Generator.create_file(
       Path.join([args.base_dir, "message_schemas", args.message_dir, "#{args.message_name}.json"]),
-      schema_template(message_name: args.message_name)
+      schema_template(schema_id: schema_id(args))
     )
+  end
+
+  # JSON Schema `$id` attribute should be a valid URI
+  # https://json-schema.org/understanding-json-schema/structuring.html#id
+  defp schema_id(%{message_name: message_name}) do
+    Polyn.Naming.dot_to_colon(args.message_name)
   end
 
   Mix.Generator.embed_template(:schema, """
   {
-    "$id": "<%= @message_name %>",
+    "$id": "<%= @schema_id %>",
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "This is why this message exists and what it does",
     "type": "object",
