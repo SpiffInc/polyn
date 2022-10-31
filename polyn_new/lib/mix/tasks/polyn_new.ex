@@ -39,18 +39,30 @@ defmodule Mix.Tasks.Polyn.New do
   end
 
   defp gen_mix_project(args) do
-    if File.exists?(Path.join([args.base_dir, args.app, "mix.exs"])) do
+    if File.exists?(Path.join(project_root(args), "mix.exs")) do
       Mix.shell().info("Mix project already exists, not generating a new one")
     else
-      Mix.Task.rerun("new", [Path.join([args.base_dir, args.app]), "--sup"])
+      Mix.Task.rerun("new", [project_root(args), "--sup"])
       add_dependencies(args)
+      add_application_file(args)
     end
   end
 
   defp add_dependencies(args) do
     Mix.Generator.create_file(
-      Path.join([args.base_dir, args.app, "mix.exs"]),
+      Path.join(project_root(args), "mix.exs"),
       mix_exs_template(
+        app: String.to_atom(args.app),
+        base_module: args.base_module
+      ),
+      force: true
+    )
+  end
+
+  defp add_application_file(args) do
+    Mix.Generator.create_file(
+      Path.join([project_root(args), "lib", args.app, "application.ex"]),
+      application_template(
         app: String.to_atom(args.app),
         base_module: args.base_module
       ),
@@ -60,14 +72,14 @@ defmodule Mix.Tasks.Polyn.New do
 
   defp gen_schemas_dir(args) do
     Mix.Generator.create_file(
-      Path.join([args.base_dir, args.app, "message_schemas/.gitkeep"]),
+      Path.join(project_root(args), "message_schemas/.gitkeep"),
       ""
     )
   end
 
   defp gen_commanded_application(args) do
     Mix.Generator.create_file(
-      "#{args.base_dir}/#{args.app}/lib/#{args.app}/commanded_application.ex",
+      Path.join(project_root(args), "/lib/#{args.app}/commanded_application.ex"),
       commanded_application_template(
         app: String.to_atom(args.app),
         base_module: args.base_module
@@ -76,7 +88,7 @@ defmodule Mix.Tasks.Polyn.New do
   end
 
   defp gen_commanded_application_config(args) do
-    path = Path.join([args.base_dir, "#{args.app}/config/config.exs"])
+    path = Path.join(project_root(args), "/config/config.exs")
 
     content =
       commanded_application_config_template(
@@ -99,8 +111,12 @@ defmodule Mix.Tasks.Polyn.New do
   defp copy_docker_yml(args) do
     Mix.Generator.copy_file(
       Application.app_dir(:polyn_new, "priv/docker-compose.yml"),
-      Path.join([args.base_dir, args.app, "docker-compose.yml"])
+      Path.join(project_root(args), "docker-compose.yml")
     )
+  end
+
+  defp project_root(args) do
+    Path.join([args.base_dir, args.app])
   end
 
   Mix.Generator.embed_template(:commanded_application, """
@@ -160,5 +176,30 @@ defmodule Mix.Tasks.Polyn.New do
       ]
     end
   end
+  """)
+
+  Mix.Generator.embed_template(:application, """
+  defmodule <%= @base_module %>.Application do
+    # See https://hexdocs.pm/elixir/Application.html
+    # for more information on OTP Applications
+    @moduledoc false
+
+    use Application
+
+    @impl true
+    def start(_type, _args) do
+      children = [
+        # Starts a worker by calling: <%= @base_module %>.Worker.start_link(arg)
+        # {<%= @base_module %>.Worker, arg}
+        {<%= @base_module %>.CommandedApplication}
+      ]
+
+      # See https://hexdocs.pm/elixir/Supervisor.html
+      # for other strategies and supported options
+      opts = [strategy: :one_for_one, name: <%= @base_module %>.Supervisor]
+      Supervisor.start_link(children, opts)
+    end
+  end
+
   """)
 end

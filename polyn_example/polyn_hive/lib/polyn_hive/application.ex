@@ -10,6 +10,7 @@ defmodule PolynHive.Application do
     children = [
       # Starts a worker by calling: PolynHive.Worker.start_link(arg)
       # {PolynHive.Worker, arg}
+      {PolynHive.CommandedApplication}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

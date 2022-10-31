@@ -39,6 +39,22 @@ defmodule Mix.Tasks.Polyn.NewTest do
     end
   end
 
+  describe "application file" do
+    test "includes commanded application in supervision tree", %{tmp_dir: tmp_dir} do
+      Mix.Task.rerun("polyn.new", [tmp_dir])
+
+      assert contents =
+               Path.join(
+                 tmp_dir,
+                 "#{default_app_name()}/lib/#{default_app_name()}/application.ex"
+               )
+               |> File.read!()
+
+      assert contents =~ "{PolynHive.CommandedApplication}"
+      assert contents =~ "Supervisor.start_link(children, opts)"
+    end
+  end
+
   describe "commanded_application" do
     test "adds commanded_application to current dir", %{tmp_dir: tmp_dir} do
       Mix.Task.rerun("polyn.new", [tmp_dir])
