@@ -23,6 +23,7 @@ defmodule PolynHive.MixProject do
   defp deps do
     [
       {:polyn_events, "~> 0.1.0"},
+      {:polyn_messages, "~> 0.1.0"}
     ]
   end
 end

@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Polyn.NewTest do
       assert mix_file = Path.join(tmp_dir, "#{default_app_name()}/mix.exs") |> File.read!()
       assert mix_file =~ "app: :polyn_hive"
       assert mix_file =~ "{:polyn_events, \"~> 0.1.0\"}"
+      assert mix_file =~ "{:polyn_messages, \"~> 0.1.0\"}"
       assert mix_file =~ "mod: {PolynHive.Application"
     end
 
