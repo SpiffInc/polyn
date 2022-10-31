@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Polyn.Gen.Schema do
   # JSON Schema `$id` attribute should be a valid URI
   # https://json-schema.org/understanding-json-schema/structuring.html#id
   defp schema_id(%{message_name: message_name}) do
-    Polyn.Naming.dot_to_colon(args.message_name)
+    Polyn.Naming.dot_to_colon(message_name)
   end
 
   Mix.Generator.embed_template(:schema, """
