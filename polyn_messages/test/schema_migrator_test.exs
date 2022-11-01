@@ -61,6 +61,18 @@ defmodule Polyn.SchemaMigratorTest do
            }
   end
 
+  test "invalid json schema raises", %{tmp_dir: tmp_dir} do
+    add_schema_file(tmp_dir, "app.widgets.v1", "foo")
+
+    %{message: message} =
+      assert_raise(Polyn.MigrationException, fn ->
+        SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+      end)
+
+    assert message =~ "for event, app.widgets.v1"
+    assert message =~ "no function clause matching in ExJsonSchema.Schema.resolve/2"
+  end
+
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
