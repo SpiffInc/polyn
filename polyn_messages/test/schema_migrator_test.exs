@@ -1,6 +1,7 @@
 defmodule Polyn.SchemaMigratorTest do
   use Polyn.ConnCase, async: true
 
+  alias Jetstream.API.KV
   alias Polyn.SchemaMigrator
 
   @conn_name :schema_migrator_test
@@ -9,27 +10,43 @@ defmodule Polyn.SchemaMigratorTest do
   @moduletag with_gnat: @conn_name
 
   setup do
-    Jetstream.API.KV.create_bucket(@conn_name, @store_name)
+    {:ok, _info} = KV.create_bucket(@conn_name, @store_name)
 
-    cleanup(fn pid ->
-      Jetstream.API.KV.delete_bucket(pid, @store_name)
+    on_exit(fn ->
+      cleanup(fn pid ->
+        :ok = KV.delete_bucket(pid, @store_name)
+      end)
     end)
 
     :ok
   end
 
   test "adds schema to the store", %{tmp_dir: tmp_dir} do
-    # SchemaMigrator.migrate()
     add_schema_file(tmp_dir, "app.widgets.v1", %{
       "type" => "object",
       "properties" => %{
         "name" => %{"type" => "string"}
       }
     })
+
+    SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+
+    schema = get_schema("app.widgets.v1")
+
+    assert schema["definitions"]["datadef"] == %{
+             "type" => "object",
+             "properties" => %{
+               "name" => %{"type" => "string"}
+             }
+           }
   end
 
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
+  end
+
+  defp get_schema(name) do
+    KV.get_value(@conn_name, @store_name, name) |> Jason.decode!()
   end
 end
