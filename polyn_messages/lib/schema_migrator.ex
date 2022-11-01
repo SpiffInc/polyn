@@ -33,6 +33,7 @@ defmodule Polyn.SchemaMigrator do
 
     Enum.map(paths, fn path ->
       name = Path.basename(path, ".json")
+      Polyn.Naming.validate_message_name!(name)
 
       schema =
         decode_schema_file(path)

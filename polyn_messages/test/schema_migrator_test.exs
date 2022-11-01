@@ -73,6 +73,19 @@ defmodule Polyn.SchemaMigratorTest do
     assert message =~ "no function clause matching in ExJsonSchema.Schema.resolve/2"
   end
 
+  test "invalid file name raises", %{tmp_dir: tmp_dir} do
+    add_schema_file(tmp_dir, "app widgets v1", %{
+      "type" => "object",
+      "properties" => %{
+        "name" => %{"type" => "string"}
+      }
+    })
+
+    assert_raise(Polyn.NamingException, fn ->
+      SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+    end)
+  end
+
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
