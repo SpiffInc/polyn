@@ -80,19 +80,19 @@ defmodule Polyn.Naming do
   end
 
   @doc """
-  Validate the name of an event, also sometimes called an event `type`.
+  Validate the name of a message.
 
   ## Examples
 
-      iex>Polyn.Naming.validate_event_type("user.created")
+      iex>Polyn.Naming.validate_message_name("user.created")
       :ok
 
-      iex>Polyn.Naming.validate_event_type("user  created")
+      iex>Polyn.Naming.validate_message_name("user  created")
       {:error, message}
   """
-  @spec validate_event_type(name :: binary()) :: :ok | {:error, binary()}
-  def validate_event_type(type) do
-    if String.match?(type, ~r/^[a-z0-9]+(?:\.[a-z0-9]+)*$/) do
+  @spec validate_message_name(name :: binary()) :: :ok | {:error, binary()}
+  def validate_message_name(name) do
+    if String.match?(name, ~r/^[a-z0-9]+(?:\.[a-z0-9]+)*$/) do
       :ok
     else
       {:error, "Event names must be lowercase, alphanumeric and dot separated"}
@@ -100,20 +100,19 @@ defmodule Polyn.Naming do
   end
 
   @doc """
-  Validate the name of an event, also sometimes called an event `type`.
-  Raises if invalid
+  Validate the name of a message. Raises if invalid
 
   ## Examples
 
-      iex>Polyn.Naming.validate_event_type!("user.created")
+      iex>Polyn.Naming.validate_message_name!("user.created")
       :ok
 
-      iex>Polyn.Naming.validate_event_type!("user  created")
+      iex>Polyn.Naming.validate_message_name!("user  created")
       Polyn.NamingException
   """
-  @spec validate_event_type!(name :: binary()) :: :ok
-  def validate_event_type!(type) do
-    case validate_event_type(type) do
+  @spec validate_message_name!(name :: binary()) :: :ok
+  def validate_message_name!(name) do
+    case validate_message_name(name) do
       {:error, reason} ->
         raise Polyn.NamingException, reason
 
@@ -161,7 +160,7 @@ defmodule Polyn.Naming do
   """
 
   def consumer_name(type, source \\ nil) do
-    validate_event_type!(type)
+    validate_message_name!(type)
 
     type =
       trim_domain_prefix(type)
