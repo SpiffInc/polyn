@@ -27,6 +27,7 @@ defmodule PolynMessages.MixProject do
   defp deps do
     [
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:ex_json_schema, "~> 0.9.1"},
       {:jason, "~> 1.2"},
       {:jetstream, "~> 0.0.5"},
       {:polyn_naming, path: "../polyn_naming"}
