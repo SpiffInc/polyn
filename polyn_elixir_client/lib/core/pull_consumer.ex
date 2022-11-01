@@ -223,7 +223,7 @@ defmodule Polyn.PullConsumer do
          connection_name: connection_name
        }) do
     consumer_name = Polyn.Naming.consumer_name(type, source)
-    stream = Polyn.Naming.lookup_stream_name!(connection_name, type)
+    stream = Polyn.Jetstream.lookup_stream_name!(connection_name, type)
     [connection_name: connection_name, stream_name: stream, consumer_name: consumer_name]
   end
 
