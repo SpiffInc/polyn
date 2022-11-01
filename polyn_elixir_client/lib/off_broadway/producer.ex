@@ -188,7 +188,7 @@ with {:module, _} <- Code.ensure_compiled(Broadway) do
       source = Keyword.get(opts, :source)
       conn = Keyword.get(opts, :connection_name)
       consumer_name = Polyn.Naming.consumer_name(type, source)
-      stream_name = Polyn.Naming.lookup_stream_name!(conn, type)
+      stream_name = Polyn.Jetstream.lookup_stream_name!(conn, type)
 
       Keyword.put(opts, :stream_name, stream_name)
       |> Keyword.put(:consumer_name, consumer_name)

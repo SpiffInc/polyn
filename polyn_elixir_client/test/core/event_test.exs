@@ -43,7 +43,7 @@ defmodule Polyn.EventTest do
     end
 
     test "raises if invalid type" do
-      assert_raise(Polyn.ValidationException, fn ->
+      assert_raise(Polyn.NamingException, fn ->
         Event.full_type("user created v1")
       end)
     end
@@ -55,7 +55,7 @@ defmodule Polyn.EventTest do
     end
 
     test "raises if invalid name" do
-      assert_raise(Polyn.ValidationException, fn ->
+      assert_raise(Polyn.NamingException, fn ->
         assert "com:test:user:backend:orders" == Event.full_source("*orders*")
       end)
     end

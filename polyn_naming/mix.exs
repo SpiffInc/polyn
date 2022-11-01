@@ -7,7 +7,7 @@ defmodule PolynNaming.MixProject do
     [
       app: :polyn_naming,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),

@@ -153,7 +153,7 @@ defmodule Polyn.Serializers.JSON do
   end
 
   defp validate_event_type(type) do
-    case Polyn.Naming.validate_event_type(type) do
+    case Polyn.Naming.validate_message_name(type) do
       {:error, reason} -> {:error, [reason]}
       success -> success
     end

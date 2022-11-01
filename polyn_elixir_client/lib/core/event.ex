@@ -117,7 +117,7 @@ defmodule Polyn.Event do
   """
   @spec full_type(type :: binary()) :: binary()
   def full_type(type) do
-    Naming.validate_event_type!(type)
+    Naming.validate_message_name!(type)
     "#{domain()}.#{Naming.trim_domain_prefix(type)}"
   end
 

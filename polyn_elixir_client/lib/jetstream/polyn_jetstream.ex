@@ -59,4 +59,29 @@ defmodule Polyn.Jetstream do
       subject -> [subject]
     end
   end
+
+  @doc """
+  Lookup the name of a stream for a given event type
+
+  ## Examples
+
+        iex>Polyn.Naming.lookup_stream_name!(:gnat, "user.created.v1")
+        "USERS"
+
+        iex>Polyn.Naming.lookup_stream_name!(:gnat, "foo.v1")
+        Polyn.StreamException
+  """
+  def lookup_stream_name!(conn, type) do
+    case list_streams(conn, subject: type) do
+      {:ok, %{streams: [stream]}} ->
+        stream
+
+      {:error, error} ->
+        raise Polyn.StreamException,
+              "Could not find any streams for type #{type}. #{inspect(error)}"
+
+      _ ->
+        raise Polyn.StreamException, "Could not find any streams for type #{type}"
+    end
+  end
 end
