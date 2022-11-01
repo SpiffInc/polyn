@@ -86,6 +86,17 @@ defmodule Polyn.SchemaMigratorTest do
     end)
   end
 
+  test "non-json docs are ignored", %{tmp_dir: tmp_dir} do
+    File.write!(Path.join(tmp_dir, "foo.png"), "foo")
+
+    assert :ok =
+             SchemaMigrator.migrate(
+               store_name: @store_name,
+               schema_dir: tmp_dir,
+               conn: @conn_name
+             )
+  end
+
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
