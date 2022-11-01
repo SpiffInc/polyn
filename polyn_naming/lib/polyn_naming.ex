@@ -146,17 +146,17 @@ defmodule Polyn.Naming do
   end
 
   @doc """
-    Create a consumer name from a source and type. Uses the
-    configured `:source_root` as the prefix. Will include an
-    additional `source` if passed in
+  Create a consumer name from a source and type. Uses the
+  configured `:source_root` as the prefix. Will include an
+  additional `source` if passed in
 
-    ## Examples
+  ## Examples
 
-        iex>Polyn.Naming.consumer_name("user.created.v1")
-        "user_backend_user_created_v1"
+      iex>Polyn.Naming.consumer_name("user.created.v1")
+      "user_backend_user_created_v1"
 
-        iex>Polyn.Naming.consumer_name("user.created.v1", "notifications")
-        "user_backend_notifications_user_created_v1"
+      iex>Polyn.Naming.consumer_name("user.created.v1", "notifications")
+      "user_backend_notifications_user_created_v1"
   """
 
   def consumer_name(type, source \\ nil) do
