@@ -22,7 +22,7 @@ defmodule Polyn.SchemaMigrator do
   defp get_schema_files(%{schema_dir: schema_dir}) do
     cloud_event_schema = get_cloud_event_schema()
 
-    Path.wildcard(schema_dir <> "**/*.json")
+    Path.wildcard(schema_dir <> "/**/*.json")
     |> Enum.map(fn path ->
       schema =
         decode_schema_file(path)

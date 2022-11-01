@@ -41,6 +41,26 @@ defmodule Polyn.SchemaMigratorTest do
            }
   end
 
+  test "adds schema to the store from subdirectories", %{tmp_dir: tmp_dir} do
+    add_schema_file(tmp_dir, "foo-dir/app.widgets.v1", %{
+      "type" => "object",
+      "properties" => %{
+        "name" => %{"type" => "string"}
+      }
+    })
+
+    SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+
+    schema = get_schema("app.widgets.v1")
+
+    assert schema["definitions"]["datadef"] == %{
+             "type" => "object",
+             "properties" => %{
+               "name" => %{"type" => "string"}
+             }
+           }
+  end
+
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
