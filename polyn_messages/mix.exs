@@ -28,6 +28,7 @@ defmodule PolynMessages.MixProject do
     [
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:jason, "~> 1.2"},
+      {:jetstream, "~> 0.0.5"},
       {:polyn_naming, path: "../polyn_naming"}
     ]
   end
