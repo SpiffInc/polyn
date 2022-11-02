@@ -16,6 +16,7 @@ defmodule Polyn.SchemaMigrator do
       )
 
     schema_file_paths(args)
+    |> validate_uniqueness!(args)
     |> read_schema_files()
     |> persist_schemas(args)
   end
@@ -24,8 +25,34 @@ defmodule Polyn.SchemaMigrator do
     Path.join(File.cwd!(), "message_schemas")
   end
 
-  def schema_file_paths(%{schema_dir: schema_dir}) do
+  defp schema_file_paths(%{schema_dir: schema_dir}) do
     Path.wildcard(schema_dir <> "/**/*.json")
+  end
+
+  defp validate_uniqueness!(paths, args) do
+    duplicates =
+      Enum.group_by(paths, &Path.basename(&1, ".json"))
+      |> Enum.filter(fn {message_name, paths} -> Enum.count(paths) > 1 end)
+      |> Enum.map(fn {message_name, paths} ->
+        "#{message_name} -> \n#{format_duplicate_paths(paths, args)}"
+      end)
+
+    unless Enum.empty?(duplicates) do
+      msg =
+        [
+          "There can only be one of each message schema. The following message names were duplicated:"
+          | duplicates
+        ]
+        |> Enum.join("\n")
+
+      raise Polyn.MigrationException, msg
+    end
+
+    paths
+  end
+
+  defp format_duplicate_paths(paths, %{schema_dir: schema_dir}) do
+    Enum.map_join(paths, "\n", fn path -> "\t" <> Path.relative_to(path, schema_dir) end)
   end
 
   defp read_schema_files(paths) do

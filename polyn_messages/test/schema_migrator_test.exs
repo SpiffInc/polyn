@@ -97,6 +97,33 @@ defmodule Polyn.SchemaMigratorTest do
              )
   end
 
+  test "raises if two duplicate message names exist in different subdirectories", %{
+    tmp_dir: tmp_dir
+  } do
+    add_schema_file(tmp_dir, "foo-dir/app.widgets.v1", %{
+      "type" => "object",
+      "properties" => %{
+        "name" => %{"type" => "string"}
+      }
+    })
+
+    add_schema_file(tmp_dir, "bar-dir/app.widgets.v1", %{
+      "type" => "object",
+      "properties" => %{
+        "name" => %{"type" => "string"}
+      }
+    })
+
+    %{message: message} =
+      assert_raise(Polyn.MigrationException, fn ->
+        SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+      end)
+
+    assert message =~ "The following message names were duplicated:"
+    assert message =~ "foo-dir/app.widgets.v1"
+    refute message =~ tmp_dir
+  end
+
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
