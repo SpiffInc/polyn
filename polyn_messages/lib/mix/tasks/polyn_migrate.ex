@@ -11,16 +11,36 @@ defmodule Mix.Tasks.Polyn.Migrate do
   use Mix.Task
   require Mix.Generator
 
-  defstruct [:base_dir]
+  defstruct [:root_dir, :store_name, :conn]
+
+  @conn_name :migrate_gnat
 
   @impl Mix.Task
   def run(args) do
     {opts, _args} = OptionParser.parse!(args, strict: [dir: :string, store_name: :string])
 
     args =
-      struct!(__MODULE__,
-        base_dir: Keyword.get(opts, :dir, File.cwd!()),
-        store_name: opts[:store_name]
+      struct(
+        __MODULE__,
+        Keyword.merge(opts, root_dir: Keyword.get(opts, :dir, File.cwd!()))
+        |> Keyword.put(:conn, @conn_name)
       )
+
+    start_nats_connection()
+
+    Polyn.SchemaMigrator.migrate(
+      store_name: args.store_name,
+      root_dir: args.root_dir,
+      conn: args.conn
+    )
+  end
+
+  defp start_nats_connection do
+    connection_settings = Application.get_env(:polyn_messages, :nats_connection_settings)
+
+    Gnat.ConnectionSupervisor.start_link(%{
+      name: @conn_name,
+      connection_settings: connection_settings
+    })
   end
 end
