@@ -102,16 +102,15 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp validate_schema(schema, name) do
-    try do
-      ExJsonSchema.Schema.resolve(schema)
-      schema
-    rescue
-      e ->
-        raise Polyn.MigrationException,
+    ExJsonSchema.Schema.resolve(schema)
+    schema
+  rescue
+    e ->
+      reraise Polyn.MigrationException,
               "Invalid JSON Schema document for event, #{name}\n" <>
                 "Schema: #{inspect(schema)}\n" <>
-                "Rescued Error: #{e.__struct__.message(e)}\n"
-    end
+                "Rescued Error: #{e.__struct__.message(e)}\n",
+              __STACKTRACE__
   end
 
   defp persist_schemas(%{schemas: schemas} = args) do
