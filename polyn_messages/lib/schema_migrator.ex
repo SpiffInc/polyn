@@ -2,14 +2,21 @@ defmodule Polyn.SchemaMigrator do
   # Module for migrating JSON schemas for Polyn messages
   @moduledoc false
 
+  require Logger
   alias Jetstream.API.KV
 
   @store_name "POLYN_SCHEMAS"
   @schema_dir "message_schemas"
 
-  defstruct store_name: @store_name, schema_dir: nil, conn: nil, paths: nil, schemas: nil
+  defstruct store_name: @store_name,
+            schema_dir: nil,
+            conn: nil,
+            paths: nil,
+            schemas: nil,
+            log: nil
 
-  @type migrate_option :: {:store_name, binary()} | {:root_dir, binary()} | {:conn, Gnat.t()}
+  @type migrate_option ::
+          {:store_name, binary()} | {:root_dir, binary()} | {:conn, Gnat.t()} | {:log, fun()}
 
   @spec migrate(opts :: [migrate_option()]) :: :ok
   def migrate(opts) do
@@ -17,7 +24,10 @@ defmodule Polyn.SchemaMigrator do
       struct(
         __MODULE__,
         Keyword.merge(opts, schema_dir: get_schema_dir(opts), store_name: get_store_name(opts))
+        |> Keyword.put_new(:log, fn msg -> Logger.info(msg) end)
       )
+
+    args.log.("Loading events into the Polyn schema registry from #{args.schema_dir}")
 
     schema_file_paths(args)
     |> validate_uniqueness!()
@@ -62,8 +72,12 @@ defmodule Polyn.SchemaMigrator do
     args
   end
 
-  defp format_duplicate_paths(paths, %{schema_dir: schema_dir}) do
-    Enum.map_join(paths, "\n", fn path -> "\t" <> Path.relative_to(path, schema_dir) end)
+  defp format_duplicate_paths(paths, %{schema_dir: schema_dir} = args) do
+    Enum.map_join(paths, "\n", fn path -> "\t" <> relative_path(path, args) end)
+  end
+
+  defp relative_path(path, args) do
+    Path.relative_to(path, args.schema_dir)
   end
 
   defp read_schema_files(%{paths: paths} = args) do
@@ -71,6 +85,7 @@ defmodule Polyn.SchemaMigrator do
 
     schemas =
       Enum.reduce(paths, %{}, fn path, acc ->
+        args.log.("Reading schema from #{relative_path(path, args)}")
         name = Path.basename(path, ".json")
         Polyn.Naming.validate_message_name!(name)
 
@@ -129,6 +144,7 @@ defmodule Polyn.SchemaMigrator do
     |> MapSet.new()
     |> MapSet.difference(schema_files)
     |> Enum.each(fn missing_schema ->
+      args.log.("Deleting schema #{missing_schema}")
       KV.delete_key(args.conn, args.store_name, missing_schema)
     end)
 

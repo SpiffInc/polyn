@@ -17,6 +17,8 @@ defmodule Mix.Tasks.Polyn.Migrate do
 
   @impl Mix.Task
   def run(args) do
+    shell = Mix.shell()
+
     {opts, _args} = OptionParser.parse!(args, strict: [dir: :string, store_name: :string])
 
     args =
@@ -26,12 +28,16 @@ defmodule Mix.Tasks.Polyn.Migrate do
         |> Keyword.put(:conn, @conn_name)
       )
 
+    shell.info("Connection to NATS")
     start_nats_connection()
+
+    shell.info("Updating Polyn schema registry")
 
     Polyn.SchemaMigrator.migrate(
       store_name: args.store_name,
       root_dir: args.root_dir,
-      conn: args.conn
+      conn: args.conn,
+      log: &shell.info/1
     )
   end
 
