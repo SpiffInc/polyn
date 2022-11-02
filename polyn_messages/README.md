@@ -11,12 +11,9 @@ Polyn Messages usese [NATS](https://nats.io/) for passing messages. As such you 
 ```elixir
 import Config
 
-config :polyn_messages, :nats_connection_settings, %{
-  name: :gnat,
-  connection_settings: [
-    %{host: "127.0.0.1", port: 4222}
-  ]
-}
+config :polyn_messages, :nats_connection_settings, [
+  %{host: "127.0.0.1", port: 4222}
+]
 ```
 
 ## Installation

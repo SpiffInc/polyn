@@ -159,12 +159,9 @@ defmodule Mix.Tasks.Polyn.New do
   """)
 
   Mix.Generator.embed_template(:polyn_messages_config, """
-  config :polyn_messages, :nats_connection_settings, %{
-    name: :gnat,
-    connection_settings: [
-      %{host: "127.0.0.1", port: 4222}
-    ]
-  }
+  config :polyn_messages, :nats_connection_settings, [
+    %{host: "127.0.0.1", port: 4222}
+  ]
   """)
 
   Mix.Generator.embed_template(:mix_exs, """

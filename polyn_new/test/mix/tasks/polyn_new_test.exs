@@ -127,7 +127,7 @@ defmodule Mix.Tasks.Polyn.NewTest do
                |> File.read!()
 
       assert contents =~ "import Config"
-      assert contents =~ "config :polyn_messages, :nats_connection_settings, %{"
+      assert contents =~ "config :polyn_messages, :nats_connection_settings, ["
     end
   end
 end
