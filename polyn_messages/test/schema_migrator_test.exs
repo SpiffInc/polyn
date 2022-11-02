@@ -121,7 +121,27 @@ defmodule Polyn.SchemaMigratorTest do
 
     assert message =~ "The following message names were duplicated:"
     assert message =~ "foo-dir/app.widgets.v1"
+    # Only showing the relative path for clarity
     refute message =~ tmp_dir
+  end
+
+  test "removes deleted schema files from kv store", %{tmp_dir: tmp_dir} do
+    # Adding value to kv store with no matching file
+    KV.put_value(
+      @conn_name,
+      @store_name,
+      "app.widgets.v1",
+      Jason.encode!(%{
+        "type" => "object",
+        "properties" => %{
+          "name" => %{"type" => "string"}
+        }
+      })
+    )
+
+    SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+
+    refute KV.get_value(@conn_name, @store_name, "app.widgets.v1")
   end
 
   defp add_schema_file(tmp_dir, path, contents) do
