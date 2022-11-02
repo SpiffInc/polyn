@@ -117,4 +117,17 @@ defmodule Mix.Tasks.Polyn.NewTest do
       assert contents =~ "config :polyn_hive, PolynHive.CommandedApplication,"
     end
   end
+
+  describe "polyn_messages_config" do
+    test "generates polyn_messages config", %{tmp_dir: tmp_dir} do
+      Mix.Task.rerun("polyn.new", [tmp_dir])
+
+      assert contents =
+               Path.join(tmp_dir, "#{default_app_name()}/config/config.exs")
+               |> File.read!()
+
+      assert contents =~ "import Config"
+      assert contents =~ "config :polyn_messages, :nats_connection_settings, ["
+    end
+  end
 end

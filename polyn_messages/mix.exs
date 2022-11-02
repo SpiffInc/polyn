@@ -6,11 +6,15 @@ defmodule PolynMessages.MixProject do
       app: :polyn_messages,
       version: "0.1.0",
       elixir: "~> 1.14",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases()
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -23,7 +27,9 @@ defmodule PolynMessages.MixProject do
   defp deps do
     [
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:ex_json_schema, "~> 0.9.1"},
       {:jason, "~> 1.2"},
+      {:jetstream, "~> 0.0.5"},
       {:polyn_naming, path: "../polyn_naming"}
     ]
   end

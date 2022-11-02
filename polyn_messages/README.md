@@ -1,6 +1,24 @@
-# PolynMessages
+# Polyn Messages
 
-**TODO: Add description**
+Elixir library for the central management of Polyn message schemas.
+
+## Configuration
+
+### NATS connection
+
+Polyn Messages uses [NATS](https://nats.io/) for passing messages. As such you need to configure your [connection settings](https://hexdocs.pm/gnat/Gnat.ConnectionSupervisor.html#content) to your NATS server(s).
+
+```elixir
+import Config
+
+config :polyn_messages, :nats_connection_settings, [
+  %{host: "127.0.0.1", port: 4222}
+]
+```
+
+## Usage
+
+To update your NATS server with message schema changes, stream changes, and consumer changes run `mix polyn.migrate`
 
 ## Installation
 

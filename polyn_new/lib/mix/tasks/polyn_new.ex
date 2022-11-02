@@ -35,6 +35,7 @@ defmodule Mix.Tasks.Polyn.New do
     gen_schemas_dir(args)
     gen_commanded_application(args)
     gen_commanded_application_config(args)
+    gen_polyn_messages_config(args)
     copy_docker_yml(args)
   end
 
@@ -108,6 +109,16 @@ defmodule Mix.Tasks.Polyn.New do
     end)
   end
 
+  defp gen_polyn_messages_config(args) do
+    path = Path.join(project_root(args), "/config/config.exs")
+
+    content = polyn_messages_config_template([])
+
+    File.open!(path, [:append], fn file ->
+      IO.write(file, "\n" <> content)
+    end)
+  end
+
   defp copy_docker_yml(args) do
     Mix.Generator.copy_file(
       Application.app_dir(:polyn_new, "priv/docker-compose.yml"),
@@ -145,6 +156,12 @@ defmodule Mix.Tasks.Polyn.New do
     pubsub: :local,
     registry: :local,
     snapshotting: %{}
+  """)
+
+  Mix.Generator.embed_template(:polyn_messages_config, """
+  config :polyn_messages, :nats_connection_settings, [
+    %{host: "127.0.0.1", port: 4222}
+  ]
   """)
 
   Mix.Generator.embed_template(:mix_exs, """
