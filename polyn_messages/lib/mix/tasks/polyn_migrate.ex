@@ -38,9 +38,7 @@ defmodule Mix.Tasks.Polyn.Migrate do
   defp start_nats_connection do
     connection_settings = Application.get_env(:polyn_messages, :nats_connection_settings)
 
-    Gnat.ConnectionSupervisor.start_link(%{
-      name: @conn_name,
-      connection_settings: connection_settings
-    })
+    # Not using the `Gnat.ConnectionSupervisor` because this is not a long-lived process
+    Gnat.start_link(Enum.random(connection_settings), name: @conn_name)
   end
 end
