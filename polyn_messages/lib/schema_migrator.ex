@@ -24,7 +24,7 @@ defmodule Polyn.SchemaMigrator do
       struct(
         __MODULE__,
         Keyword.merge(opts, schema_dir: get_schema_dir(opts), store_name: get_store_name(opts))
-        |> Keyword.put_new(:log, fn msg -> Logger.info(msg) end)
+        |> Keyword.put_new(:log, &Logger.info/1)
       )
 
     args.log.("Loading events into the Polyn schema registry from #{args.schema_dir}")
