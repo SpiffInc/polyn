@@ -29,7 +29,7 @@ defmodule Polyn.SchemaMigratorTest do
       }
     })
 
-    SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+    SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
 
     schema = get_schema("app.widgets.v1")
 
@@ -49,7 +49,7 @@ defmodule Polyn.SchemaMigratorTest do
       }
     })
 
-    SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+    SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
 
     schema = get_schema("app.widgets.v1")
 
@@ -66,7 +66,7 @@ defmodule Polyn.SchemaMigratorTest do
 
     %{message: message} =
       assert_raise(Polyn.MigrationException, fn ->
-        SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+        SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
       end)
 
     assert message =~ "for event, app.widgets.v1"
@@ -82,7 +82,7 @@ defmodule Polyn.SchemaMigratorTest do
     })
 
     assert_raise(Polyn.NamingException, fn ->
-      SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+      SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
     end)
   end
 
@@ -92,7 +92,7 @@ defmodule Polyn.SchemaMigratorTest do
     assert :ok =
              SchemaMigrator.migrate(
                store_name: @store_name,
-               schema_dir: tmp_dir,
+               root_dir: tmp_dir,
                conn: @conn_name
              )
   end
@@ -116,7 +116,7 @@ defmodule Polyn.SchemaMigratorTest do
 
     %{message: message} =
       assert_raise(Polyn.MigrationException, fn ->
-        SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+        SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
       end)
 
     assert message =~ "The following message names were duplicated:"
@@ -139,14 +139,14 @@ defmodule Polyn.SchemaMigratorTest do
       })
     )
 
-    SchemaMigrator.migrate(store_name: @store_name, schema_dir: tmp_dir, conn: @conn_name)
+    SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
 
     refute KV.get_value(@conn_name, @store_name, "app.widgets.v1")
   end
 
   defp add_schema_file(tmp_dir, path, contents) do
-    Path.join(tmp_dir, Path.dirname(path)) |> File.mkdir_p!()
-    File.write!(Path.join([tmp_dir, path <> ".json"]), Jason.encode!(contents))
+    Path.join([tmp_dir, "message_schemas", Path.dirname(path)]) |> File.mkdir_p!()
+    File.write!(Path.join([tmp_dir, "message_schemas", path <> ".json"]), Jason.encode!(contents))
   end
 
   defp get_schema(name) do

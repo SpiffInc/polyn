@@ -5,17 +5,18 @@ defmodule Polyn.SchemaMigrator do
   alias Jetstream.API.KV
 
   @store_name "POLYN_SCHEMAS"
+  @schema_dir "message_schemas"
 
   defstruct store_name: @store_name, schema_dir: nil, conn: nil, paths: nil, schemas: nil
 
-  @type migrate_option :: {:store_name, binary()} | {:schema_dir, binary()} | {:conn, Gnat.t()}
+  @type migrate_option :: {:store_name, binary()} | {:root_dir, binary()} | {:conn, Gnat.t()}
 
   @spec migrate(opts :: [migrate_option()]) :: :ok
   def migrate(opts) do
     args =
-      struct!(
+      struct(
         __MODULE__,
-        Keyword.put_new(opts, :schema_dir, default_schema_dir())
+        Keyword.put(opts, :schema_dir, get_schema_dir(opts))
       )
 
     schema_file_paths(args)
@@ -27,8 +28,8 @@ defmodule Polyn.SchemaMigrator do
     :ok
   end
 
-  defp default_schema_dir do
-    Path.join(File.cwd!(), "message_schemas")
+  defp get_schema_dir(opts) do
+    Keyword.fetch!(opts, :root_dir) |> Path.join(@schema_dir)
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
@@ -38,9 +39,9 @@ defmodule Polyn.SchemaMigrator do
   defp validate_uniqueness!(%{paths: paths} = args) do
     duplicates =
       Enum.group_by(paths, &Path.basename(&1, ".json"))
-      |> Enum.filter(fn {message_name, paths} -> Enum.count(paths) > 1 end)
+      |> Enum.filter(fn {_message_name, paths} -> Enum.count(paths) > 1 end)
       |> Enum.map(fn {message_name, paths} ->
-        "#{message_name} -> \n#{format_duplicate_paths(args)}"
+        "#{message_name} -> \n#{format_duplicate_paths(paths, args)}"
       end)
 
     unless Enum.empty?(duplicates) do
@@ -57,7 +58,7 @@ defmodule Polyn.SchemaMigrator do
     args
   end
 
-  defp format_duplicate_paths(%{paths: paths, schema_dir: schema_dir}) do
+  defp format_duplicate_paths(paths, %{schema_dir: schema_dir}) do
     Enum.map_join(paths, "\n", fn path -> "\t" <> Path.relative_to(path, schema_dir) end)
   end
 
@@ -137,7 +138,7 @@ defmodule Polyn.SchemaMigrator do
         schemas
 
       {:error, error} ->
-        raise Polyn.MigrationError,
+        raise Polyn.MigrationException,
               "Could not load schemas from store #{store_name}.\n#{inspect(error)}"
     end
   end
