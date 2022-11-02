@@ -16,7 +16,7 @@ defmodule Polyn.SchemaMigrator do
     args =
       struct(
         __MODULE__,
-        Keyword.put(opts, :schema_dir, get_schema_dir(opts))
+        Keyword.merge(opts, schema_dir: get_schema_dir(opts), store_name: get_store_name(opts))
       )
 
     schema_file_paths(args)
@@ -30,6 +30,10 @@ defmodule Polyn.SchemaMigrator do
 
   defp get_schema_dir(opts) do
     Keyword.fetch!(opts, :root_dir) |> Path.join(@schema_dir)
+  end
+
+  defp get_store_name(opts) do
+    opts[:store_name] || @store_name
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
@@ -139,7 +143,7 @@ defmodule Polyn.SchemaMigrator do
 
       {:error, error} ->
         raise Polyn.MigrationException,
-              "Could not load schemas from store #{store_name}.\n#{inspect(error)}"
+              "Could not load schemas from store #{inspect(store_name)}.\n#{inspect(error)}"
     end
   end
 end
