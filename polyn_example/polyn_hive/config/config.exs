@@ -1,5 +1,5 @@
-  # General application configuration
-  import Config
+# General application configuration
+import Config
 
 config :polyn_hive, PolynHive.CommandedApplication,
   # https://hexdocs.pm/commanded_extreme_adapter/getting-started.html#content
@@ -20,3 +20,10 @@ config :polyn_hive, PolynHive.CommandedApplication,
   pubsub: :local,
   registry: :local,
   snapshotting: %{}
+
+config :polyn_messages, :nats_connection_settings, %{
+  name: :gnat,
+  connection_settings: [
+    %{host: "127.0.0.1", port: 4222}
+  ]
+}
