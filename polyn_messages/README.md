@@ -16,6 +16,10 @@ config :polyn_messages, :nats_connection_settings, [
 ]
 ```
 
+## Usage
+
+To update your NATS server with message schema changes, stream changes, and consumer changes run `mix polyn.migrate`
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
