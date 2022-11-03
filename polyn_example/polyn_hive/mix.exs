@@ -22,8 +22,8 @@ defmodule PolynHive.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:polyn_events, "~> 0.1.0"},
-      {:polyn_messages, "~> 0.1.0"}
+      {:polyn_events, path: "../../polyn_events"},
+      {:polyn_messages, path: "../../polyn_messages"}
     ]
   end
 end
