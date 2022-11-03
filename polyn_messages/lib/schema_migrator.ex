@@ -3,11 +3,11 @@ defmodule Polyn.SchemaMigrator do
   @moduledoc false
 
   require Logger
-  alias Jetstream.API.{KV, Stream}
+  alias Jetstream.API.KV
   alias Polyn.Messages.CloudEvent
+  alias Polyn.SchemaMigrator.Stream
 
   @schema_dir "message_schemas"
-  @stream_not_found_code 10059
 
   defstruct store_name: nil,
             schema_dir: nil,
@@ -166,7 +166,7 @@ defmodule Polyn.SchemaMigrator do
   defp persist_schemas(%{schemas: schemas} = args) do
     Enum.each(schemas, fn {name, schema} ->
       add_to_registry(name, schema, args)
-      create_stream(name, schema, args)
+      Stream.create_stream(name, schema, args)
     end)
 
     args
@@ -175,33 +175,5 @@ defmodule Polyn.SchemaMigrator do
   defp add_to_registry(name, schema, args) do
     args.log.("Saving schema #{name} in the registry")
     KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
-  end
-
-  defp create_stream(name, schema, args) do
-    description = CloudEvent.get_data_schema(schema)["description"]
-
-    stream = %Stream{
-      name: Polyn.Naming.stream_name(name),
-      subjects: [name],
-      description: description
-    }
-
-    unless stream_exists?(stream, args) do
-      args.log.("Creating stream #{stream.name}")
-      Stream.create(args.conn, stream)
-    end
-  end
-
-  defp stream_exists?(%Stream{} = stream, args) do
-    case Stream.info(args.conn, stream.name) do
-      {:ok, _info} ->
-        true
-
-      {:error, %{"err_code" => @stream_not_found_code}} ->
-        false
-
-      {:error, error} ->
-        raise Polyn.MigrationException, inspect(error)
-    end
   end
 end

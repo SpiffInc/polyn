@@ -24,7 +24,7 @@ defmodule Polyn.Messages.CloudEvent do
   @doc """
   Lookup the part of the cloud event schema specific to the data
   """
-  def get_data_schema(cloud_event_schema) do
+  def data_schema(cloud_event_schema) do
     get_in(cloud_event_schema, @data_schema_path)
   end
 end
