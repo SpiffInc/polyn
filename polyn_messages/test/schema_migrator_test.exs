@@ -1,7 +1,7 @@
 defmodule Polyn.SchemaMigratorTest do
   use Polyn.ConnCase, async: true
 
-  alias Jetstream.API.KV
+  alias Jetstream.API.{KV, Stream}
   alias Polyn.SchemaMigrator
 
   @conn_name :schema_migrator_test
@@ -145,6 +145,40 @@ defmodule Polyn.SchemaMigratorTest do
       end)
 
     assert message =~ "Cannot find a schema file for app.widgets.v1"
+  end
+
+  describe "stream setup" do
+    setup do
+      Stream.delete(@conn_name, "APP_WIDGETS_V1")
+      :ok
+    end
+
+    test "adds stream for the schema", %{tmp_dir: tmp_dir} do
+      add_schema_file(tmp_dir, "app.widgets.v1", %{
+        "type" => "object",
+        "properties" => %{
+          "name" => %{"type" => "string"}
+        }
+      })
+
+      SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+
+      assert {:ok,
+              %{
+                config: %{
+                  name: "APP_WIDGETS_V1",
+                  subjects: ["app.widgets.v1"],
+                  max_age: 0,
+                  max_bytes: -1,
+                  max_consumers: -1,
+                  max_msg_size: -1,
+                  max_msgs: -1,
+                  max_msgs_per_subject: -1,
+                  num_replicas: 1,
+                  storage: :file
+                }
+              }} = Stream.info(@conn_name, "APP_WIDGETS_V1")
+    end
   end
 
   defp add_schema_file(tmp_dir, path, contents) do

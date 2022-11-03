@@ -3,9 +3,10 @@ defmodule Polyn.SchemaMigrator do
   @moduledoc false
 
   require Logger
-  alias Jetstream.API.KV
+  alias Jetstream.API.{KV, Stream}
 
   @schema_dir "message_schemas"
+  @stream_not_found_code 10059
 
   defstruct store_name: nil,
             schema_dir: nil,
@@ -27,8 +28,6 @@ defmodule Polyn.SchemaMigrator do
         |> Keyword.put_new(:log, &Logger.info/1)
       )
 
-    args.log.("Loading events into the Polyn schema registry from #{args.schema_dir}")
-
     schema_file_paths(args)
     |> validate_uniqueness!()
     |> read_schema_files()
@@ -48,10 +47,13 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
+    args.log.("Finding schema files in #{args.schema_dir}")
     Map.put(args, :paths, Path.wildcard(schema_dir <> "/**/*.json"))
   end
 
   defp validate_uniqueness!(%{paths: paths} = args) do
+    args.log.("Validating schema uniqueness")
+
     duplicates =
       Enum.group_by(paths, &Path.basename(&1, ".json"))
       |> Enum.filter(fn {_message_name, paths} -> Enum.count(paths) > 1 end)
@@ -130,6 +132,8 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp load_all_schemas(%{conn: conn, store_name: store_name} = args) do
+    args.log.("Loading current schemas from registry")
+
     case KV.contents(conn, store_name) do
       {:ok, schemas} ->
         Map.put(args, :old_schemas, schemas)
@@ -141,6 +145,7 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp validate_compatibility!(args) do
+    args.log.("Validating schema compatibility")
     errors = validate_none_deleted(args)
 
     unless Enum.empty?(errors) do
@@ -165,9 +170,37 @@ defmodule Polyn.SchemaMigrator do
 
   defp persist_schemas(%{schemas: schemas} = args) do
     Enum.each(schemas, fn {name, schema} ->
-      KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
+      add_to_registry(name, schema, args)
+      create_stream(name, schema, args)
     end)
 
     args
+  end
+
+  defp add_to_registry(name, schema, args) do
+    args.log.("Saving schema #{name} in the registry")
+    KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
+  end
+
+  defp create_stream(name, _schema, args) do
+    stream = %Stream{name: Polyn.Naming.stream_name(name), subjects: [name]}
+
+    unless stream_exists?(stream, args) do
+      args.log.("Creating stream #{stream.name}")
+      Stream.create(args.conn, stream)
+    end
+  end
+
+  defp stream_exists?(%Stream{} = stream, args) do
+    case Stream.info(args.conn, stream.name) do
+      {:ok, _info} ->
+        true
+
+      {:error, %{"err_code" => @stream_not_found_code}} ->
+        false
+
+      {:error, error} ->
+        raise Polyn.MigrationException, inspect(error)
+    end
   end
 end
