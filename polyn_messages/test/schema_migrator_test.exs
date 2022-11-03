@@ -195,6 +195,22 @@ defmodule Polyn.SchemaMigratorTest do
       assert {:ok, %{config: %{description: "something about widgets"}}} =
                Stream.info(@conn_name, "APP_WIDGETS_V1")
     end
+
+    test "schema with `identity_key` property has token subject", %{tmp_dir: tmp_dir} do
+      add_schema_file(tmp_dir, "app.widgets.v1", %{
+        "identity" => "id",
+        "type" => "object",
+        "properties" => %{
+          "id" => %{"type" => "string"},
+          "name" => %{"type" => "string"}
+        }
+      })
+
+      SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+
+      assert {:ok, %{config: %{subjects: ["app.widgets.v1.*"]}}} =
+               Stream.info(@conn_name, "APP_WIDGETS_V1")
+    end
   end
 
   defp add_schema_file(tmp_dir, path, contents) do

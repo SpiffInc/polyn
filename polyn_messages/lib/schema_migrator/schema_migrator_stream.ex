@@ -14,7 +14,7 @@ defmodule Polyn.SchemaMigrator.Stream do
   def create_stream(name, schema, %SchemaMigrator{} = migrator) do
     stream = %Stream{
       name: Polyn.Naming.stream_name(name),
-      subjects: [name],
+      subjects: [subject(name, schema)],
       description: schema_description(schema)
     }
 
@@ -26,6 +26,16 @@ defmodule Polyn.SchemaMigrator.Stream do
 
   defp schema_description(schema) do
     CloudEvent.data_schema(schema)["description"]
+  end
+
+  defp subject(name, schema) do
+    case CloudEvent.data_schema(schema)["identity"] do
+      nil ->
+        name
+
+      _identity ->
+        "#{name}.*"
+    end
   end
 
   defp stream_exists?(%Stream{} = stream, migrator) do
