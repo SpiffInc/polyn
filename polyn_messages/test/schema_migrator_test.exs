@@ -149,12 +149,12 @@ defmodule Polyn.SchemaMigratorTest do
 
   describe "stream setup" do
     setup do
-      Stream.delete(@conn_name, "APP_WIDGETS_V1")
+      Stream.delete(@conn_name, "STREAM_SETUP_MESSAGE_V1")
       :ok
     end
 
     test "adds default stream for the schema", %{tmp_dir: tmp_dir} do
-      add_schema_file(tmp_dir, "app.widgets.v1", %{
+      add_schema_file(tmp_dir, "stream.setup.message.v1", %{
         "type" => "object",
         "properties" => %{
           "name" => %{"type" => "string"}
@@ -166,8 +166,8 @@ defmodule Polyn.SchemaMigratorTest do
       assert {:ok,
               %{
                 config: %{
-                  name: "APP_WIDGETS_V1",
-                  subjects: ["app.widgets.v1"],
+                  name: "STREAM_SETUP_MESSAGE_V1",
+                  subjects: ["stream.setup.message.v1"],
                   description: nil,
                   max_age: 0,
                   max_bytes: -1,
@@ -178,11 +178,11 @@ defmodule Polyn.SchemaMigratorTest do
                   num_replicas: 1,
                   storage: :file
                 }
-              }} = Stream.info(@conn_name, "APP_WIDGETS_V1")
+              }} = Stream.info(@conn_name, "STREAM_SETUP_MESSAGE_V1")
     end
 
     test "schema description is stream description", %{tmp_dir: tmp_dir} do
-      add_schema_file(tmp_dir, "app.widgets.v1", %{
+      add_schema_file(tmp_dir, "stream.setup.message.v1", %{
         "description" => "something about widgets",
         "type" => "object",
         "properties" => %{
@@ -193,11 +193,11 @@ defmodule Polyn.SchemaMigratorTest do
       SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
 
       assert {:ok, %{config: %{description: "something about widgets"}}} =
-               Stream.info(@conn_name, "APP_WIDGETS_V1")
+               Stream.info(@conn_name, "STREAM_SETUP_MESSAGE_V1")
     end
 
     test "schema with `identity` field has token subject", %{tmp_dir: tmp_dir} do
-      add_schema_file(tmp_dir, "app.widgets.v1", %{
+      add_schema_file(tmp_dir, "stream.setup.message.v1", %{
         "identity" => "id",
         "type" => "object",
         "properties" => %{
@@ -208,8 +208,8 @@ defmodule Polyn.SchemaMigratorTest do
 
       SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
 
-      assert {:ok, %{config: %{subjects: ["app.widgets.v1.*"]}}} =
-               Stream.info(@conn_name, "APP_WIDGETS_V1")
+      assert {:ok, %{config: %{subjects: ["stream.setup.message.v1.*"]}}} =
+               Stream.info(@conn_name, "STREAM_SETUP_MESSAGE_V1")
     end
   end
 
