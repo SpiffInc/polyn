@@ -168,6 +168,7 @@ defmodule Polyn.SchemaMigratorTest do
                 config: %{
                   name: "APP_WIDGETS_V1",
                   subjects: ["app.widgets.v1"],
+                  description: nil,
                   max_age: 0,
                   max_bytes: -1,
                   max_consumers: -1,
@@ -178,6 +179,21 @@ defmodule Polyn.SchemaMigratorTest do
                   storage: :file
                 }
               }} = Stream.info(@conn_name, "APP_WIDGETS_V1")
+    end
+
+    test "schema description is stream description", %{tmp_dir: tmp_dir} do
+      add_schema_file(tmp_dir, "app.widgets.v1", %{
+        "description" => "something about widgets",
+        "type" => "object",
+        "properties" => %{
+          "name" => %{"type" => "string"}
+        }
+      })
+
+      SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+
+      assert {:ok, %{config: %{description: "something about widgets"}}} =
+               Stream.info(@conn_name, "APP_WIDGETS_V1")
     end
   end
 

@@ -182,8 +182,14 @@ defmodule Polyn.SchemaMigrator do
     KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
   end
 
-  defp create_stream(name, _schema, args) do
-    stream = %Stream{name: Polyn.Naming.stream_name(name), subjects: [name]}
+  defp create_stream(name, schema, args) do
+    description = schema["definitions"]["datadef"]["description"]
+
+    stream = %Stream{
+      name: Polyn.Naming.stream_name(name),
+      subjects: [name],
+      description: description
+    }
 
     unless stream_exists?(stream, args) do
       args.log.("Creating stream #{stream.name}")
