@@ -69,7 +69,7 @@ defmodule Polyn.SchemaMigratorTest do
         SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
       end)
 
-    assert message =~ "for event, app.widgets.v1"
+    assert message =~ "Invalid JSON Schema document for app.widgets.v1"
     assert message =~ "no function clause matching in ExJsonSchema.Schema.resolve/2"
   end
 
@@ -196,7 +196,7 @@ defmodule Polyn.SchemaMigratorTest do
                Stream.info(@conn_name, "APP_WIDGETS_V1")
     end
 
-    test "schema with `identity_key` property has token subject", %{tmp_dir: tmp_dir} do
+    test "schema with `identity` field has token subject", %{tmp_dir: tmp_dir} do
       add_schema_file(tmp_dir, "app.widgets.v1", %{
         "identity" => "id",
         "type" => "object",
@@ -210,6 +210,41 @@ defmodule Polyn.SchemaMigratorTest do
 
       assert {:ok, %{config: %{subjects: ["app.widgets.v1.*"]}}} =
                Stream.info(@conn_name, "APP_WIDGETS_V1")
+    end
+  end
+
+  describe "identity" do
+    test "raises if `identity` field is present and `type` is not `object`", %{tmp_dir: tmp_dir} do
+      add_schema_file(tmp_dir, "app.widgets.v1", %{
+        "identity" => "id",
+        "type" => "string"
+      })
+
+      %{message: message} =
+        assert_raise(Polyn.MigrationException, fn ->
+          SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+        end)
+
+      assert message =~
+               "`identity` field on app.widgets.v1 can only be used with `type` of `object`. Got `string`"
+    end
+
+    test "raises if `identity` field is present and not found in properties", %{tmp_dir: tmp_dir} do
+      add_schema_file(tmp_dir, "app.widgets.v1", %{
+        "identity" => "id",
+        "type" => "object",
+        "properties" => %{
+          "name" => %{"type" => "string"}
+        }
+      })
+
+      %{message: message} =
+        assert_raise(Polyn.MigrationException, fn ->
+          SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+        end)
+
+      assert message =~
+               "`identity` field of `id` on app.widgets.v1 must also be defined in `properties`"
     end
   end
 

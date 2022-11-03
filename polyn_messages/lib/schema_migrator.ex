@@ -95,7 +95,7 @@ defmodule Polyn.SchemaMigrator do
 
         schema =
           decode_schema_file(path)
-          |> validate_schema(name)
+          |> validate_schema!(name)
           |> compose_cloud_event_schema(cloud_event_schema)
 
         Map.put(acc, name, schema)
@@ -114,17 +114,40 @@ defmodule Polyn.SchemaMigrator do
     CloudEvent.merge_schema(cloud_event_schema, schema)
   end
 
-  defp validate_schema(schema, name) do
+  defp validate_schema!(schema, name) do
+    validate_is_json_schema!(schema, name)
+    validate_identity_field!(schema, name)
+  end
+
+  defp validate_is_json_schema!(schema, name) do
     ExJsonSchema.Schema.resolve(schema)
     schema
   rescue
     e ->
       reraise Polyn.MigrationException,
-              "Invalid JSON Schema document for event, #{name}\n" <>
+              "Invalid JSON Schema document for #{name}\n" <>
                 "Schema: #{inspect(schema)}\n" <>
                 "Rescued Error: #{e.__struct__.message(e)}\n",
               __STACKTRACE__
   end
+
+  defp validate_identity_field!(%{"identity" => id, "type" => "object"} = schema, name) do
+    case schema["properties"][id] do
+      nil ->
+        raise Polyn.MigrationException,
+              "`identity` field of `#{id}` on #{name} must also be defined in `properties`"
+
+      _ ->
+        schema
+    end
+  end
+
+  defp validate_identity_field!(%{"identity" => _id, "type" => type}, name) do
+    raise Polyn.MigrationException,
+          "`identity` field on #{name} can only be used with `type` of `object`. Got `#{type}`"
+  end
+
+  defp validate_identity_field!(schema, _name), do: schema
 
   defp load_all_schemas(%{conn: conn, store_name: store_name} = args) do
     args.log.("Loading current schemas from registry")
