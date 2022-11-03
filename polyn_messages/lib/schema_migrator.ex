@@ -7,11 +7,12 @@ defmodule Polyn.SchemaMigrator do
 
   @schema_dir "message_schemas"
 
-  defstruct store_name: @store_name,
+  defstruct store_name: nil,
             schema_dir: nil,
             conn: nil,
             paths: nil,
             schemas: nil,
+            old_schemas: nil,
             log: nil
 
   @type migrate_option ::
@@ -31,8 +32,9 @@ defmodule Polyn.SchemaMigrator do
     schema_file_paths(args)
     |> validate_uniqueness!()
     |> read_schema_files()
+    |> load_all_schemas()
+    |> validate_compatibility!()
     |> persist_schemas()
-    |> delete_missing_schemas()
 
     :ok
   end
@@ -42,7 +44,8 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp get_store_name(opts) do
-    opts[:store_name] || Polyn.Messages.default_schema_store()
+    (opts[:store_name] || Polyn.Messages.default_schema_store())
+    |> IO.inspect(label: "STORE NAME")
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
@@ -71,7 +74,7 @@ defmodule Polyn.SchemaMigrator do
     args
   end
 
-  defp format_duplicate_paths(paths, %{schema_dir: schema_dir} = args) do
+  defp format_duplicate_paths(paths, args) do
     Enum.map_join(paths, "\n", fn path -> "\t" <> relative_path(path, args) end)
   end
 
@@ -127,37 +130,45 @@ defmodule Polyn.SchemaMigrator do
               __STACKTRACE__
   end
 
+  defp load_all_schemas(%{conn: conn, store_name: store_name} = args) do
+    case KV.contents(conn, store_name) do
+      {:ok, schemas} ->
+        Map.put(args, :old_schemas, schemas)
+
+      {:error, error} ->
+        raise Polyn.MigrationException,
+              "Could not load schemas from store #{inspect(store_name)}.\n#{inspect(error)}"
+    end
+  end
+
+  defp validate_compatibility!(args) do
+    errors = validate_none_deleted(args)
+
+    unless Enum.empty?(errors) do
+      raise Polyn.CompatibilityException, Enum.join(errors, "\n")
+    end
+
+    args
+  end
+
+  defp validate_none_deleted(%{schemas: new_schemas, old_schemas: old_schemas}) do
+    schema_files = Map.keys(new_schemas) |> MapSet.new()
+
+    Map.keys(old_schemas)
+    |> MapSet.new()
+    |> MapSet.difference(schema_files)
+    |> Enum.map(fn missing_schema ->
+      "Cannot find a schema file for #{missing_schema}. Deleting schemas is a breaking change. " <>
+        "To delete a schema, ensure that no services are depending on it and then use the `mix polyn.delete.schema` " <>
+        "task to delete it"
+    end)
+  end
+
   defp persist_schemas(%{schemas: schemas} = args) do
     Enum.each(schemas, fn {name, schema} ->
       KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
     end)
 
     args
-  end
-
-  defp delete_missing_schemas(%{schemas: schemas} = args) do
-    schema_files = Map.keys(schemas) |> MapSet.new()
-
-    load_all_schemas(args)
-    |> Map.keys()
-    |> MapSet.new()
-    |> MapSet.difference(schema_files)
-    |> Enum.each(fn missing_schema ->
-      args.log.("Deleting schema #{missing_schema}")
-      KV.delete_key(args.conn, args.store_name, missing_schema)
-    end)
-
-    args
-  end
-
-  defp load_all_schemas(%{conn: conn, store_name: store_name}) do
-    case KV.contents(conn, store_name) do
-      {:ok, schemas} ->
-        schemas
-
-      {:error, error} ->
-        raise Polyn.MigrationException,
-              "Could not load schemas from store #{inspect(store_name)}.\n#{inspect(error)}"
-    end
   end
 end

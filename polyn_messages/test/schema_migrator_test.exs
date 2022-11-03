@@ -125,7 +125,7 @@ defmodule Polyn.SchemaMigratorTest do
     refute message =~ tmp_dir
   end
 
-  test "removes deleted schema files from kv store", %{tmp_dir: tmp_dir} do
+  test "raises if schema files are deleted", %{tmp_dir: tmp_dir} do
     # Adding value to kv store with no matching file
     KV.put_value(
       @conn_name,
@@ -139,9 +139,12 @@ defmodule Polyn.SchemaMigratorTest do
       })
     )
 
-    SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+    %{message: message} =
+      assert_raise(Polyn.CompatibilityException, fn ->
+        SchemaMigrator.migrate(store_name: @store_name, root_dir: tmp_dir, conn: @conn_name)
+      end)
 
-    refute KV.get_value(@conn_name, @store_name, "app.widgets.v1")
+    assert message =~ "Cannot find a schema file for app.widgets.v1"
   end
 
   defp add_schema_file(tmp_dir, path, contents) do
