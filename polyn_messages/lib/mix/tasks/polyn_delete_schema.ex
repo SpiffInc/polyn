@@ -58,8 +58,7 @@ defmodule Mix.Tasks.Polyn.Delete.Schema do
   end
 
   defp get_store_name(opts) do
-    (opts[:store_name] || Polyn.Messages.default_schema_store())
-    |> IO.inspect(label: "STORE NAME")
+    opts[:store_name] || Polyn.Messages.default_schema_store()
   end
 
   defp start_nats_connection do
