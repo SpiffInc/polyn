@@ -4,6 +4,8 @@ defmodule Polyn.SchemaMigrator do
 
   require Logger
   alias Jetstream.API.KV
+  alias Polyn.Messages.CloudEvent
+  alias Polyn.SchemaMigrator.Stream
 
   @schema_dir "message_schemas"
 
@@ -27,8 +29,6 @@ defmodule Polyn.SchemaMigrator do
         |> Keyword.put_new(:log, &Logger.info/1)
       )
 
-    args.log.("Loading events into the Polyn schema registry from #{args.schema_dir}")
-
     schema_file_paths(args)
     |> validate_uniqueness!()
     |> read_schema_files()
@@ -48,10 +48,13 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
+    args.log.("Finding schema files in #{args.schema_dir}")
     Map.put(args, :paths, Path.wildcard(schema_dir <> "/**/*.json"))
   end
 
   defp validate_uniqueness!(%{paths: paths} = args) do
+    args.log.("Validating schema uniqueness")
+
     duplicates =
       Enum.group_by(paths, &Path.basename(&1, ".json"))
       |> Enum.filter(fn {_message_name, paths} -> Enum.count(paths) > 1 end)
@@ -82,7 +85,7 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp read_schema_files(%{paths: paths} = args) do
-    cloud_event_schema = get_cloud_event_schema()
+    cloud_event_schema = CloudEvent.get_schema()
 
     schemas =
       Enum.reduce(paths, %{}, fn path, acc ->
@@ -92,7 +95,7 @@ defmodule Polyn.SchemaMigrator do
 
         schema =
           decode_schema_file(path)
-          |> validate_schema(name)
+          |> validate_schema!(name)
           |> compose_cloud_event_schema(cloud_event_schema)
 
         Map.put(acc, name, schema)
@@ -101,35 +104,54 @@ defmodule Polyn.SchemaMigrator do
     Map.put(args, :schemas, schemas)
   end
 
-  # We mix the message schema with a cloud event schema so that there's only one
-  # unified schema to validate against
-  defp get_cloud_event_schema do
-    Application.app_dir(:polyn_messages, "priv/cloud-event-schema.json")
-    |> File.read!()
-    |> Jason.decode!()
-  end
-
   defp decode_schema_file(path) do
     File.read!(path) |> Jason.decode!()
   end
 
+  # We mix the message schema with a cloud event schema so that there's only one
+  # unified schema to validate against
   defp compose_cloud_event_schema(schema, cloud_event_schema) do
-    put_in(cloud_event_schema, ["definitions", "datadef"], schema)
+    CloudEvent.merge_schema(cloud_event_schema, schema)
   end
 
-  defp validate_schema(schema, name) do
+  defp validate_schema!(schema, name) do
+    validate_is_json_schema!(schema, name)
+    validate_identity_field!(schema, name)
+  end
+
+  defp validate_is_json_schema!(schema, name) do
     ExJsonSchema.Schema.resolve(schema)
     schema
   rescue
     e ->
       reraise Polyn.MigrationException,
-              "Invalid JSON Schema document for event, #{name}\n" <>
+              "Invalid JSON Schema document for #{name}\n" <>
                 "Schema: #{inspect(schema)}\n" <>
                 "Rescued Error: #{e.__struct__.message(e)}\n",
               __STACKTRACE__
   end
 
+  defp validate_identity_field!(%{"identity" => id, "type" => "object"} = schema, name) do
+    case schema["properties"][id] do
+      nil ->
+        raise Polyn.MigrationException,
+              "`identity` field of `#{id}` on #{name} must also be defined in `properties`"
+
+      _ ->
+        schema
+    end
+  end
+
+  defp validate_identity_field!(%{"identity" => _id, "type" => type}, name) do
+    raise Polyn.MigrationException,
+          "`identity` field on #{name} can only be used with `type` of `object`. Got `#{type}`"
+  end
+
+  defp validate_identity_field!(schema, _name), do: schema
+
   defp load_all_schemas(%{conn: conn, store_name: store_name} = args) do
+    args.log.("Loading current schemas from registry")
+
     case KV.contents(conn, store_name) do
       {:ok, schemas} ->
         Map.put(args, :old_schemas, schemas)
@@ -141,6 +163,7 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp validate_compatibility!(args) do
+    args.log.("Validating schema compatibility")
     errors = validate_none_deleted(args)
 
     unless Enum.empty?(errors) do
@@ -165,9 +188,15 @@ defmodule Polyn.SchemaMigrator do
 
   defp persist_schemas(%{schemas: schemas} = args) do
     Enum.each(schemas, fn {name, schema} ->
-      KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
+      add_to_registry(name, schema, args)
+      Stream.create_stream(name, schema, args)
     end)
 
     args
+  end
+
+  defp add_to_registry(name, schema, args) do
+    args.log.("Saving schema #{name} in the registry")
+    KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
   end
 end

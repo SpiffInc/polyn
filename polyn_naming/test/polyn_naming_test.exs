@@ -247,4 +247,10 @@ defmodule Polyn.NamingTest do
       assert Naming.subject_matches?("foo.bar", "foo.*.*.>") == false
     end
   end
+
+  describe "stream_name/1" do
+    test "upcase and underscore message name" do
+      assert Naming.stream_name("foo.bar") == "FOO_BAR"
+    end
+  end
 end

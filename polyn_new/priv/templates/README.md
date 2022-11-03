@@ -41,7 +41,14 @@ Run `mix polyn.gen.schema MESSAGE_NAME` to generate a new JSON Schema for a mess
 All the schemas for your messages should live in the `./message_schemas` directory.
 The name of your schema file should be the same as your message name, but with `.json` at the end.
 So if you have a message called `widgets.created.v1` you would create a schema file called `widgets.created.v1.json` in the `./message_schemas` directory. Every schema should be a valid [JSON Schema](https://json-schema.org/) document.
-The mix task will combine your message schema with the [Cloud Events Schema](https://cloudevents.io/) when it adds it to the Polyn Schema Registry. This means you only need to include the JSON Schema for the `data` portion of the Cloud Event and not the entire Cloud Event schema.
+
+The `mix polyn.migrate` task will combine your message schema with the [Cloud Events Schema](https://cloudevents.io/) when it adds it to the Polyn Schema Registry. This means you only need to include the JSON Schema for the `data` portion of the Cloud Event and not the entire Cloud Event schema.
+
+### Polyn Specific Schema Fields
+
+#### `identity`
+
+An `identity` field SHOULD be included for messages that are about a specific [domain entity](https://blog.jannikwempe.com/domain-driven-design-entities-value-objects#heading-entities). The value of the `identity` field MUST be the same as one of the [properties](https://json-schema.org/understanding-json-schema/reference/object.html#properties) defined on an `object` type schema.
 
 #### Subdirectories
 

@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Polyn.Migrate do
     shell.info("Connection to NATS")
     start_nats_connection()
 
-    shell.info("Updating Polyn schema registry")
+    shell.info("Updating Schemas")
 
     Polyn.SchemaMigrator.migrate(
       store_name: args.store_name,

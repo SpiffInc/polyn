@@ -77,13 +77,27 @@ If the `datacontenttype` is not present in the event, a Polyn client MUST assume
 
 #### `data`
 
-A Polyn client MUST add its event data to the `data` attribute of the CloudEvent. The data format must match the `datacontentype` field.
+A Polyn client MUST add its message data to the `data` attribute of the CloudEvent. The data format must match the `datacontentype` field.
+
+## Message Schema
+
+Each message MUST be associated with a JSON Schema that is a CloudEvent JSON Schema document with the `data` section replaced with the schema specific to the message.
+
+### Polyn Specific Fields
+
+The following fields can be included in the root of the `data` section of a message's JSON Schema (not the root of the CloudEvent schema).
+
+#### `identity`
+
+An `identity` field SHOULD be included for messages that are about a specific [domain entity](https://blog.jannikwempe.com/domain-driven-design-entities-value-objects#heading-entities). The value of the `identity` field MUST be the same as one of the [properties](https://json-schema.org/understanding-json-schema/reference/object.html#properties) defined on an `object` type schema.
+
+#### `stream_config`
+
+A `stream_config` field can be included to overrwrite the defaults for the NATS stream associated with the message schema. Its value MUST be an `object`.
 
 ## Message Validation
 
-### JSON Schema
-
-A Polyn client MUST support loading a [JSON Schema](https://json-schema.org/) document for each event. It MUST wrap the event schema into a valid CloudEvent JSON Schema, and publish that schema to the Schema Repository. The Schema Repository should be a JetStream KeyValue Bucket called `POLYN_SCHEMAS`. Each event's JSON Schema should be a CloudEvent JSON Schema document with the `data` section replaced with the schema specific to the event.
+A Polyn client MUST support loading a [JSON Schema](https://json-schema.org/) document for each event. The Schema Repository SHOULD be a JetStream KeyValue Bucket called `POLYN_SCHEMAS`.
 
 If the Schema Respository bucket does not exist Polyn MUST raise an exception that says:
 
@@ -105,7 +119,7 @@ If a received message can't be parsed as JSON, Polyn MUST raise an exception tha
 
 If a received message is not valid and a Consumer is being used to access it, Polyn MUST send an `ACKTERM` to the Consumer so that the message won't be resent
 
-#### Schema Backwards Compatibility
+### Schema Backwards Compatibility
 
 A Polyn client SHOULD check the Schema Repository for event schema of the same name before
 publishing its events to the repository. It SHOULD validate that the event schema to be published
@@ -138,6 +152,10 @@ A Polyn client MUST publish full CloudEvent messages utilizing [NATS Jetstream](
 Each message published should include a [`"Nats-Msg-Id"`](https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication) header to prevent duplicate messages being published.
 The value of the header should be the same id as the CloudEvent id
 
+#### Identity
+
+If a message schema has an `identity` key. The Polyn client MUST use the `identity` value as the last token of the subject. For example given a `user.created.v1` schema with `{"identity": "id"}` inside and a payload of `{"id": "abc123"}` the published subject would be `user.created.v1.abc123`
+
 ### Subscribing
 
 A Polyn client MUST subscribe its components to a [NATS JetStream consumer](https://docs.nats.io/nats-concepts/jetstream/consumers)
@@ -155,3 +173,15 @@ If a consumer does not exist when attempting to subscribe Polyn MUST raise an ex
 ```
 Consumer {name} does not exist. Use polyn-cli to create it before attempting to subscribe
 ```
+
+### Streams
+
+Each message schema MUST have exactly one [Stream](https://docs.nats.io/nats-concepts/jetstream/streams) associated with it. The `subjects` of the stream MUST have one item.
+
+#### Non-identity message
+
+If the message schema does not have an `identity` key the subject will be the name of the message (e.g. `subjects: ["widgets.created.v1"]`)
+
+#### Identity message
+
+If the message schema has an `identity` key the subject will be the name of the message concatanated with one token for the identity value. For example, if a message schema named `user.created.v1` had an `identity` key of `id`, the stream `subjects` would be `"user.created.v1.*"`.
