@@ -4,6 +4,7 @@ defmodule Polyn.SchemaMigrator do
 
   require Logger
   alias Jetstream.API.{KV, Stream}
+  alias Polyn.Messages.CloudEvent
 
   @schema_dir "message_schemas"
   @stream_not_found_code 10059
@@ -84,7 +85,7 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp read_schema_files(%{paths: paths} = args) do
-    cloud_event_schema = get_cloud_event_schema()
+    cloud_event_schema = CloudEvent.get_schema()
 
     schemas =
       Enum.reduce(paths, %{}, fn path, acc ->
@@ -103,20 +104,14 @@ defmodule Polyn.SchemaMigrator do
     Map.put(args, :schemas, schemas)
   end
 
-  # We mix the message schema with a cloud event schema so that there's only one
-  # unified schema to validate against
-  defp get_cloud_event_schema do
-    Application.app_dir(:polyn_messages, "priv/cloud-event-schema.json")
-    |> File.read!()
-    |> Jason.decode!()
-  end
-
   defp decode_schema_file(path) do
     File.read!(path) |> Jason.decode!()
   end
 
+  # We mix the message schema with a cloud event schema so that there's only one
+  # unified schema to validate against
   defp compose_cloud_event_schema(schema, cloud_event_schema) do
-    put_in(cloud_event_schema, ["definitions", "datadef"], schema)
+    CloudEvent.merge_schema(cloud_event_schema, schema)
   end
 
   defp validate_schema(schema, name) do
@@ -183,7 +178,7 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp create_stream(name, schema, args) do
-    description = schema["definitions"]["datadef"]["description"]
+    description = CloudEvent.get_data_schema(schema)["description"]
 
     stream = %Stream{
       name: Polyn.Naming.stream_name(name),
