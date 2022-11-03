@@ -28,7 +28,7 @@ To update your NATS server with message schema changes, stream changes, and cons
 
 ### Delete Schema
 
-A mix task is availble to delete a schema and its associated resources on your NATS server. This is meant to be used ad-hoc when a schema can safely be removed from this system. This is a *breaking change* and should be done with caution when you are sure that no system resources are depending on the schema.
+A mix task is available to delete a schema and its associated resources on your NATS server. This is meant to be used ad-hoc when a schema can safely be removed from this system. This is a *breaking change* and should be done with caution when you are sure that no system resources are depending on the schema.
 
 ## Installation
 
