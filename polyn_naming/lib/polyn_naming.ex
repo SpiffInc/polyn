@@ -189,6 +189,19 @@ defmodule Polyn.Naming do
   end
 
   @doc """
+  Create a stream name from a valid message name
+
+  ## Examples
+
+      iex>Polyn.Naming.stream_name("user.created.v1")
+      "USER_CREATED_V1"
+  """
+  def stream_name(message_name) do
+    String.upcase(message_name)
+    |> underscore_name()
+  end
+
+  @doc """
   Determine if a given subject matches a subscription pattern
   """
   def subject_matches?(subject, pattern) do
