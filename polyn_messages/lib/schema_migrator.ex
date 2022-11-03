@@ -5,7 +5,6 @@ defmodule Polyn.SchemaMigrator do
   require Logger
   alias Jetstream.API.KV
 
-  @store_name "POLYN_SCHEMAS"
   @schema_dir "message_schemas"
 
   defstruct store_name: @store_name,
@@ -43,7 +42,7 @@ defmodule Polyn.SchemaMigrator do
   end
 
   defp get_store_name(opts) do
-    opts[:store_name] || @store_name
+    opts[:store_name] || Polyn.Messages.default_schema_store()
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
