@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Polyn.Gen.Schema do
   mix polyn.gen.schema NAME
   ```
 
-  All the schemas for your messages should live in the `./message_schemas directory.
+  All the schemas for your messages should live in the `./message_schemas` directory.
   The name of your schema file should be the same as your message name, but with `.json` at the end.
   So if you have a message called `widgets.created.v1` you would create a schema file called `widgets.created.v1.json` in the `./message_schemas`
   directory. Every schema should be a valid [JSON Schema](https://json-schema.org/) document.

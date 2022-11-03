@@ -37,6 +37,7 @@ defmodule Mix.Tasks.Polyn.New do
     gen_commanded_application_config(args)
     gen_polyn_messages_config(args)
     copy_docker_yml(args)
+    copy_readme(args)
   end
 
   defp gen_mix_project(args) do
@@ -123,6 +124,14 @@ defmodule Mix.Tasks.Polyn.New do
     Mix.Generator.copy_file(
       Application.app_dir(:polyn_new, "priv/docker-compose.yml"),
       Path.join(project_root(args), "docker-compose.yml")
+    )
+  end
+
+  defp copy_readme(args) do
+    Mix.Generator.copy_file(
+      Application.app_dir(:polyn_new, "priv/templates/README.md"),
+      Path.join(project_root(args), "README.md"),
+      force: true
     )
   end
 

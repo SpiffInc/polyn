@@ -40,6 +40,14 @@ defmodule Mix.Tasks.Polyn.NewTest do
     end
   end
 
+  describe "readme" do
+    test "copies readme", %{tmp_dir: tmp_dir} do
+      Mix.Task.rerun("polyn.new", [tmp_dir])
+
+      assert File.exists?(Path.join([tmp_dir, default_app_name(), "README.md"]))
+    end
+  end
+
   describe "application file" do
     test "includes commanded application in supervision tree", %{tmp_dir: tmp_dir} do
       Mix.Task.rerun("polyn.new", [tmp_dir])
