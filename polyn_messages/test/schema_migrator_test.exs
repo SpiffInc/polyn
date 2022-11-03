@@ -153,7 +153,7 @@ defmodule Polyn.SchemaMigratorTest do
       :ok
     end
 
-    test "adds stream for the schema", %{tmp_dir: tmp_dir} do
+    test "adds default stream for the schema", %{tmp_dir: tmp_dir} do
       add_schema_file(tmp_dir, "app.widgets.v1", %{
         "type" => "object",
         "properties" => %{
