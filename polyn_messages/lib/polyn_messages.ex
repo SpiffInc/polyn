@@ -1,18 +1,7 @@
-defmodule PolynMessages do
+defmodule Polyn.Messages do
   @moduledoc """
   Documentation for `PolynMessages`.
   """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> PolynMessages.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  def default_schema_store, do: "POLYN_SCHEMAS"
 end

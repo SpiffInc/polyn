@@ -18,7 +18,21 @@ config :polyn_messages, :nats_connection_settings, [
 
 ## Usage
 
+### Generate a Schema
+
+Run `mix polyn.gen.schema MESSAGE_NAME` to generate a new JSON Schema for a message
+
+### Migrate Schemas
+
 To update your NATS server with message schema changes, stream changes, and consumer changes run `mix polyn.migrate`
+
+### Delete Schema
+
+A mix task is available to delete a schema and its associated resources on your NATS server. This is meant to be used ad-hoc when a schema can safely be removed from this system. This is a *breaking change* and should be done with caution when you are sure that no system resources are depending on the schema.
+
+```elixir
+mix polyn.delete.schema widgets.created.v1
+```
 
 ## Installation
 

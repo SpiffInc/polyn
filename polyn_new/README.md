@@ -34,7 +34,7 @@ Erlang/OTP 22 [erts-10.7] [source] [64-bit] [smp:8:8] [async-threads:10] [hipe] 
 ```
 
 Elixir 1.12.1
-Once we have Elixir and Erlang, we are ready to install the Phoenix application generator:
+Once we have Elixir and Erlang, we are ready to install the Polyn application generator:
 
 ```bash
 $ mix archive.install hex polyn_new
