@@ -50,10 +50,6 @@ The `mix polyn.migrate` task will combine your message schema with the [Cloud Ev
 
 An `identity` field SHOULD be included for messages that are about a specific [domain entity](https://blog.jannikwempe.com/domain-driven-design-entities-value-objects#heading-entities). The value of the `identity` field MUST be the same as one of the [properties](https://json-schema.org/understanding-json-schema/reference/object.html#properties) defined on an `object` type schema.
 
-#### `stream_config`
-
-A `stream_config` field can be included to overrwrite the defaults for the NATS stream associated with the message schema. Its value MUST be an `object`.
-
 #### Subdirectories
 
 If you'd like to organize your message schemas by team ownership or some other convention, you can use subdirectories to do so.
