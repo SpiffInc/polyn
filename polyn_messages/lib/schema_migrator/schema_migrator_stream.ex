@@ -2,11 +2,11 @@ defmodule Polyn.SchemaMigrator.Stream do
   # Functions for managing the NATS Stream associated with a schema
   @moduledoc false
 
+  alias Jetstream.API.Stream
   alias Polyn.Messages.CloudEvent
   alias Polyn.SchemaMigrator
-  alias Jetstream.API.Stream
 
-  @stream_not_found_code 10059
+  @stream_not_found_code 10_059
 
   @doc """
   Create a new NATS JetStream Stream for a message schema
