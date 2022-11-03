@@ -47,14 +47,19 @@ defmodule Mix.Tasks.Polyn.Delete.Schema do
       )
     end
 
-    Path.join([args.base_dir, "message_schemas", args.message_dir, "#{args.message_name}.json"])
+    relative_path = Path.join(args.message_dir, "#{args.message_name}.json")
+    Mix.shell().info("Deleting schema file #{relative_path}")
+
+    Path.join([args.base_dir, "message_schemas", relative_path])
     |> File.rm!()
 
+    Mix.shell().info("Deleting schema key #{args.message_name} from schema store")
     KV.delete_key(@conn_name, args.store_name, args.message_name)
   end
 
   defp get_store_name(opts) do
-    opts[:store_name] || Polyn.Messages.default_schema_store()
+    (opts[:store_name] || Polyn.Messages.default_schema_store())
+    |> IO.inspect(label: "STORE NAME")
   end
 
   defp start_nats_connection do
