@@ -250,27 +250,14 @@ defmodule Polyn.SchemaMigratorTest do
 
   describe "bucket creation" do
     test "creates bucket if not existing", %{tmp_dir: tmp_dir} do
-      add_schema_file(tmp_dir, "app.widgets.v1", %{
-        "type" => "object",
-        "properties" => %{
-          "name" => %{"type" => "string"}
-        }
-      })
-
       SchemaMigrator.migrate(
         store_name: "MIGRATOR_CREATE_BUCKET_TEST",
         root_dir: tmp_dir,
         conn: @conn_name
       )
 
-      schema = get_schema("app.widgets.v1", "MIGRATOR_CREATE_BUCKET_TEST")
-
-      assert schema["definitions"]["datadef"] == %{
-               "type" => "object",
-               "properties" => %{
-                 "name" => %{"type" => "string"}
-               }
-             }
+      {:ok, %{config: %{name: "KV_MIGRATOR_CREATE_BUCKET_TEST", num_replicas: 1}}} =
+        Jetstream.API.Stream.info(@conn_name, "KV_MIGRATOR_CREATE_BUCKET_TEST")
 
       assert :ok = KV.delete_bucket(@conn_name, "MIGRATOR_CREATE_BUCKET_TEST")
     end

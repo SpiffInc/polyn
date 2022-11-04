@@ -11,12 +11,26 @@ defmodule Polyn.SchemaMigrator.SchemaStore do
   def create_store(%SchemaMigrator{conn: conn, store_name: store_name} = migrator) do
     unless exists?(migrator) do
       migrator.log.("Schema Store #{store_name} does not exist. Creating it now.")
-      KV.create_bucket(conn, store_name)
+      replicas = cluster_size(conn) |> num_replicas()
+      KV.create_bucket(conn, store_name, replicas: replicas)
     end
   end
 
   defp exists?(%SchemaMigrator{conn: conn, store_name: store_name}) do
     Stream.exists?(conn, "KV_#{store_name}")
+  end
+
+  defp num_replicas(cluster_size) when cluster_size >= 3, do: 3
+  defp num_replicas(cluster_size), do: cluster_size
+
+  defp cluster_size(conn) do
+    case Gnat.server_info(conn) do
+      %{connect_urls: urls} ->
+        Enum.count(urls)
+
+      _no_connect_urls ->
+        1
+    end
   end
 
   @doc """
