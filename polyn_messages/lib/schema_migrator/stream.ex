@@ -18,7 +18,7 @@ defmodule Polyn.SchemaMigrator.Stream do
       description: schema_description(schema)
     }
 
-    unless stream_exists?(stream, migrator) do
+    unless exists?(migrator.conn, stream.name) do
       migrator.log.("Creating stream #{stream.name}")
       Stream.create(migrator.conn, stream)
     end
@@ -38,8 +38,12 @@ defmodule Polyn.SchemaMigrator.Stream do
     end
   end
 
-  defp stream_exists?(%Stream{} = stream, migrator) do
-    case Stream.info(migrator.conn, stream.name) do
+  @doc """
+  Find if a stream exists
+  """
+  @spec exists?(conn :: Gnat.t(), name :: binary()) :: boolean()
+  def exists?(conn, name) do
+    case Stream.info(conn, name) do
       {:ok, _info} ->
         true
 

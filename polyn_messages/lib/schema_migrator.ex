@@ -31,6 +31,8 @@ defmodule Polyn.SchemaMigrator do
         |> Keyword.put_new(:log, &Logger.info/1)
       )
 
+    SchemaStore.create_store(args)
+
     schema_file_paths(args)
     |> validate_uniqueness!()
     |> read_schema_files()

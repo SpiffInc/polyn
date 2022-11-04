@@ -248,12 +248,40 @@ defmodule Polyn.SchemaMigratorTest do
     end
   end
 
+  describe "bucket creation" do
+    test "creates bucket if not existing", %{tmp_dir: tmp_dir} do
+      add_schema_file(tmp_dir, "app.widgets.v1", %{
+        "type" => "object",
+        "properties" => %{
+          "name" => %{"type" => "string"}
+        }
+      })
+
+      SchemaMigrator.migrate(
+        store_name: "MIGRATOR_CREATE_BUCKET_TEST",
+        root_dir: tmp_dir,
+        conn: @conn_name
+      )
+
+      schema = get_schema("app.widgets.v1", "MIGRATOR_CREATE_BUCKET_TEST")
+
+      assert schema["definitions"]["datadef"] == %{
+               "type" => "object",
+               "properties" => %{
+                 "name" => %{"type" => "string"}
+               }
+             }
+
+      assert :ok = KV.delete_bucket(@conn_name, "MIGRATOR_CREATE_BUCKET_TEST")
+    end
+  end
+
   defp add_schema_file(tmp_dir, path, contents) do
     Path.join([tmp_dir, "message_schemas", Path.dirname(path)]) |> File.mkdir_p!()
     File.write!(Path.join([tmp_dir, "message_schemas", path <> ".json"]), Jason.encode!(contents))
   end
 
-  defp get_schema(name) do
-    KV.get_value(@conn_name, @store_name, name) |> Jason.decode!()
+  defp get_schema(name, store_name \\ @store_name) do
+    KV.get_value(@conn_name, store_name, name) |> Jason.decode!()
   end
 end
