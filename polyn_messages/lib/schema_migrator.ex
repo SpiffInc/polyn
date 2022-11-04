@@ -21,7 +21,7 @@ defmodule Polyn.SchemaMigrator do
 
   @spec migrate(opts :: [migrate_option()]) :: :ok
   def migrate(opts) do
-    args =
+    migrator =
       struct(
         __MODULE__,
         Keyword.merge(opts,
@@ -31,9 +31,9 @@ defmodule Polyn.SchemaMigrator do
         |> Keyword.put_new(:log, &Logger.info/1)
       )
 
-    SchemaStore.create_store(args)
+    SchemaStore.create_store(migrator)
 
-    schema_file_paths(args)
+    schema_file_paths(migrator)
     |> validate_uniqueness!()
     |> read_schema_files()
     |> load_all_schemas()
@@ -47,19 +47,19 @@ defmodule Polyn.SchemaMigrator do
     Keyword.fetch!(opts, :root_dir) |> Path.join(@schema_dir)
   end
 
-  defp schema_file_paths(%{schema_dir: schema_dir} = args) do
-    args.log.("Finding schema files in #{args.schema_dir}")
-    Map.put(args, :paths, Path.wildcard(schema_dir <> "/**/*.json"))
+  defp schema_file_paths(%{schema_dir: schema_dir} = migrator) do
+    migrator.log.("Finding schema files in #{migrator.schema_dir}")
+    Map.put(migrator, :paths, Path.wildcard(schema_dir <> "/**/*.json"))
   end
 
-  defp validate_uniqueness!(%{paths: paths} = args) do
-    args.log.("Validating schema uniqueness")
+  defp validate_uniqueness!(%{paths: paths} = migrator) do
+    migrator.log.("Validating schema uniqueness")
 
     duplicates =
       Enum.group_by(paths, &Path.basename(&1, ".json"))
       |> Enum.filter(fn {_message_name, paths} -> Enum.count(paths) > 1 end)
       |> Enum.map(fn {message_name, paths} ->
-        "#{message_name} -> \n#{format_duplicate_paths(paths, args)}"
+        "#{message_name} -> \n#{format_duplicate_paths(paths, migrator)}"
       end)
 
     unless Enum.empty?(duplicates) do
@@ -73,23 +73,23 @@ defmodule Polyn.SchemaMigrator do
       raise Polyn.MigrationException, msg
     end
 
-    args
+    migrator
   end
 
-  defp format_duplicate_paths(paths, args) do
-    Enum.map_join(paths, "\n", fn path -> "\t" <> relative_path(path, args) end)
+  defp format_duplicate_paths(paths, migrator) do
+    Enum.map_join(paths, "\n", fn path -> "\t" <> relative_path(path, migrator) end)
   end
 
-  defp relative_path(path, args) do
-    Path.relative_to(path, args.schema_dir)
+  defp relative_path(path, migrator) do
+    Path.relative_to(path, migrator.schema_dir)
   end
 
-  defp read_schema_files(%{paths: paths} = args) do
+  defp read_schema_files(%{paths: paths} = migrator) do
     cloud_event_schema = CloudEvent.get_schema()
 
     schemas =
       Enum.reduce(paths, %{}, fn path, acc ->
-        args.log.("Reading schema from #{relative_path(path, args)}")
+        migrator.log.("Reading schema from #{relative_path(path, migrator)}")
         name = Path.basename(path, ".json")
         Polyn.Naming.validate_message_name!(name)
 
@@ -101,7 +101,7 @@ defmodule Polyn.SchemaMigrator do
         Map.put(acc, name, schema)
       end)
 
-    Map.put(args, :schemas, schemas)
+    Map.put(migrator, :schemas, schemas)
   end
 
   defp decode_schema_file(path) do
@@ -149,12 +149,12 @@ defmodule Polyn.SchemaMigrator do
 
   defp validate_identity_field!(schema, _name), do: schema
 
-  defp load_all_schemas(%{store_name: store_name} = args) do
-    args.log.("Loading current schemas from registry")
+  defp load_all_schemas(%{store_name: store_name} = migrator) do
+    migrator.log.("Loading current schemas from registry")
 
-    case SchemaStore.contents(args) do
+    case SchemaStore.contents(migrator) do
       {:ok, schemas} ->
-        Map.put(args, :old_schemas, schemas)
+        Map.put(migrator, :old_schemas, schemas)
 
       {:error, error} ->
         raise Polyn.MigrationException,
@@ -162,15 +162,15 @@ defmodule Polyn.SchemaMigrator do
     end
   end
 
-  defp validate_compatibility!(args) do
-    args.log.("Validating schema compatibility")
-    errors = validate_none_deleted(args)
+  defp validate_compatibility!(migrator) do
+    migrator.log.("Validating schema compatibility")
+    errors = validate_none_deleted(migrator)
 
     unless Enum.empty?(errors) do
       raise Polyn.CompatibilityException, Enum.join(errors, "\n")
     end
 
-    args
+    migrator
   end
 
   defp validate_none_deleted(%{schemas: new_schemas, old_schemas: old_schemas}) do
@@ -186,12 +186,12 @@ defmodule Polyn.SchemaMigrator do
     end)
   end
 
-  defp persist_schemas(%{schemas: schemas} = args) do
+  defp persist_schemas(%{schemas: schemas} = migrator) do
     Enum.each(schemas, fn {name, schema} ->
-      SchemaStore.put(name, schema, args)
-      Stream.create_stream(name, schema, args)
+      SchemaStore.put(name, schema, migrator)
+      Stream.create_stream(name, schema, migrator)
     end)
 
-    args
+    migrator
   end
 end
