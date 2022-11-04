@@ -18,6 +18,7 @@ defmodule Mix.Tasks.Polyn.Delete.Schema do
 
   use Mix.Task
   alias Jetstream.API.KV
+  alias Polyn.SchemaMigrator.SchemaStore
 
   defstruct [:base_dir, :message_name, :message_dir, :store_name]
 
@@ -33,7 +34,7 @@ defmodule Mix.Tasks.Polyn.Delete.Schema do
         base_dir: Keyword.get(opts, :dir, File.cwd!()),
         message_name: Path.basename(message_path),
         message_dir: Path.dirname(message_path),
-        store_name: get_store_name(opts)
+        store_name: SchemaStore.get_store_name(opts)
       )
 
     start_nats_connection()
@@ -55,10 +56,6 @@ defmodule Mix.Tasks.Polyn.Delete.Schema do
 
     Mix.shell().info("Deleting schema key #{args.message_name} from schema store")
     KV.delete_key(@conn_name, args.store_name, args.message_name)
-  end
-
-  defp get_store_name(opts) do
-    opts[:store_name] || Polyn.Messages.default_schema_store()
   end
 
   defp start_nats_connection do

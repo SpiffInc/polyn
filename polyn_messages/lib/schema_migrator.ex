@@ -3,9 +3,8 @@ defmodule Polyn.SchemaMigrator do
   @moduledoc false
 
   require Logger
-  alias Jetstream.API.KV
   alias Polyn.Messages.CloudEvent
-  alias Polyn.SchemaMigrator.Stream
+  alias Polyn.SchemaMigrator.{SchemaStore, Stream}
 
   @schema_dir "message_schemas"
 
@@ -25,7 +24,10 @@ defmodule Polyn.SchemaMigrator do
     args =
       struct(
         __MODULE__,
-        Keyword.merge(opts, schema_dir: get_schema_dir(opts), store_name: get_store_name(opts))
+        Keyword.merge(opts,
+          schema_dir: get_schema_dir(opts),
+          store_name: SchemaStore.get_store_name(opts)
+        )
         |> Keyword.put_new(:log, &Logger.info/1)
       )
 
@@ -41,10 +43,6 @@ defmodule Polyn.SchemaMigrator do
 
   defp get_schema_dir(opts) do
     Keyword.fetch!(opts, :root_dir) |> Path.join(@schema_dir)
-  end
-
-  defp get_store_name(opts) do
-    opts[:store_name] || Polyn.Messages.default_schema_store()
   end
 
   defp schema_file_paths(%{schema_dir: schema_dir} = args) do
@@ -149,10 +147,10 @@ defmodule Polyn.SchemaMigrator do
 
   defp validate_identity_field!(schema, _name), do: schema
 
-  defp load_all_schemas(%{conn: conn, store_name: store_name} = args) do
+  defp load_all_schemas(%{store_name: store_name} = args) do
     args.log.("Loading current schemas from registry")
 
-    case KV.contents(conn, store_name) do
+    case SchemaStore.contents(args) do
       {:ok, schemas} ->
         Map.put(args, :old_schemas, schemas)
 
@@ -188,15 +186,10 @@ defmodule Polyn.SchemaMigrator do
 
   defp persist_schemas(%{schemas: schemas} = args) do
     Enum.each(schemas, fn {name, schema} ->
-      add_to_registry(name, schema, args)
+      SchemaStore.put(name, schema, args)
       Stream.create_stream(name, schema, args)
     end)
 
     args
-  end
-
-  defp add_to_registry(name, schema, args) do
-    args.log.("Saving schema #{name} in the registry")
-    KV.put_value(args.conn, args.store_name, name, Jason.encode!(schema))
   end
 end
