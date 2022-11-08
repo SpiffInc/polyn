@@ -23,8 +23,13 @@ defmodule Polyn.SchemaStore do
   alias Jetstream.API.KV
 
   @store_name "POLYN_SCHEMAS"
+  @already_in_use_code 10_058
+  @default_retry_timeout 5_000
+  @default_retry_interval 1_000
+  @default_retries 5
 
-  @type option :: {:connection_name, Gnat.t()} | GenServer.option()
+  @type option ::
+          {:connection_name, Gnat.t()} | {:retry_interval, pos_integer()} | GenServer.option()
 
   @doc """
   Start a new SchemaStore process
@@ -36,7 +41,9 @@ defmodule Polyn.SchemaStore do
   """
   @spec start_link(opts :: [option()]) :: GenServer.on_start()
   def start_link(opts) do
-    {store_args, server_opts} = Keyword.split(opts, [:schemas, :store_name, :connection_name])
+    {store_args, server_opts} =
+      Keyword.split(opts, [:schemas, :store_name, :connection_name, :retry_interval])
+
     # For applications and application testing there should only be one SchemaStore running.
     # For testing the library there could be multiple
     process_name = Keyword.get(store_args, :store_name) |> process_name()
@@ -116,7 +123,7 @@ defmodule Polyn.SchemaStore do
       {:ok, _info} -> :ok
       # If some other client created the store first, with a slightly different
       # description or config we'll just use the existing one
-      {:error, %{"err_code" => 10_058}} -> :ok
+      {:error, %{"err_code" => @already_in_use_code}} -> :ok
       {:error, reason} -> raise Polyn.SchemaException, inspect(reason)
     end
   end
@@ -140,19 +147,71 @@ defmodule Polyn.SchemaStore do
     store_name = Keyword.get(init_args, :store_name, @store_name)
     conn = Keyword.fetch!(init_args, :connection_name)
     preloaded_schemas = Keyword.get(init_args, :schemas)
+    retry_interval = Keyword.get(init_args, :retry_interval, @default_retry_interval)
 
-    schemas = preloaded_schemas || load_schemas(conn, store_name)
+    schemas = preloaded_schemas || start_load_schemas(conn, store_name, retry_interval)
 
     {:ok, %{conn: conn, store_name: store_name, schemas: schemas}}
   end
 
-  defp load_schemas(conn, store_name) do
-    case KV.contents(conn, store_name) do
+  # The `Gnat.ConnectionSupervisor` doesn't block for a connection so it's possible for
+  # the `SchemaStore` process to `init` without the connection being established
+  defp start_load_schemas(conn, store_name, retry_interval, retries_left \\ @default_retries) do
+    task =
+      Task.async(fn ->
+        load_schemas(%{
+          conn: conn,
+          store_name: store_name,
+          retries_left: retries_left,
+          retry_interval: retry_interval
+        })
+      end)
+
+    case Task.yield(task, @default_retry_timeout) do
       {:ok, schemas} ->
         schemas
 
+      nil ->
+        schema_load_failed(%{
+          conn: conn,
+          store_name: store_name,
+          failed_reason: "Connection timeout after #{@default_retry_timeout}"
+        })
+    end
+  end
+
+  defp load_schemas(%{retries_left: 0} = args) do
+    schema_load_failed(args)
+  end
+
+  defp load_schemas(%{conn: conn} = args) do
+    with true <- connection_alive?(conn),
+         {:ok, schemas} <- KV.contents(conn, args.store_name) do
+      schemas
+    else
       {:error, reason} ->
-        raise Polyn.SchemaException, inspect(reason)
+        args =
+          Map.put(args, :failed_reason, reason)
+          |> Map.put(:retries_left, args.retries_left - 1)
+
+        :timer.sleep(args.retry_interval)
+        load_schemas(args)
+    end
+  end
+
+  defp schema_load_failed(args) do
+    raise Polyn.SchemaException,
+          "Could not connect to Schema Store #{args.store_name} with connection #{inspect(args.conn)}, #{inspect(args.failed_reason)}"
+  end
+
+  defp connection_alive?(conn) when is_pid(conn) do
+    Process.alive?(conn)
+  end
+
+  defp connection_alive?(conn) do
+    case Process.whereis(conn) do
+      nil -> {:error, "NATS server #{inspect(conn)} not alive"}
+      _pid -> true
     end
   end
 

@@ -30,6 +30,24 @@ defmodule Polyn.SchemaStoreTest do
 
       assert SchemaStore.get_schemas(store) == %{"foo" => "bar"}
     end
+
+    @tag capture_log: true
+    test "errors after 5 retry attempts" do
+      assert :ok = SchemaStore.create_store(@conn_name, name: @store_name)
+
+      %{message: message} =
+        assert_raise(RuntimeError, fn ->
+          start_supervised!(
+            {SchemaStore,
+             store_name: @store_name,
+             connection_name: :bad_connection,
+             retry_interval: 1,
+             name: String.to_atom(@store_name)}
+          )
+        end)
+
+      assert message =~ "NATS server :bad_connection not alive"
+    end
   end
 
   describe "create_store/0" do
