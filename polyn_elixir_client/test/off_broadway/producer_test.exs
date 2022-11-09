@@ -43,18 +43,7 @@ defmodule OffBroadway.Polyn.ProducerTest do
        ]}
     )
 
-    stream = %Stream{name: @stream_name, subjects: @stream_subjects}
-    {:ok, _response} = Stream.create(@conn_name, stream)
-
-    consumer = %Consumer{stream_name: @stream_name, durable_name: @consumer_name}
-    {:ok, _response} = Consumer.create(@conn_name, consumer)
-
-    on_exit(fn ->
-      cleanup(fn pid ->
-        :ok = Consumer.delete(pid, @stream_name, @consumer_name)
-        :ok = Stream.delete(pid, @stream_name)
-      end)
-    end)
+    :ok
   end
 
   defmodule ExampleBroadwayPipeline do
@@ -71,7 +60,8 @@ defmodule OffBroadway.Polyn.ProducerTest do
             type: "company.created.v1",
             store_name: "BROADWAY_PRODUCER_TEST_SCHEMA_STORE",
             receive_interval: 1,
-            sandbox: Keyword.get(opts, :sandbox)
+            sandbox: Keyword.get(opts, :sandbox),
+            stream_name: Keyword.get(opts, :stream_name)
           }
         ],
         processors: [
@@ -88,6 +78,8 @@ defmodule OffBroadway.Polyn.ProducerTest do
   end
 
   describe "nats integration" do
+    setup :default_stream
+
     test "valid messages are converted to Event structs" do
       Gnat.pub(
         @conn_name,
@@ -315,6 +307,8 @@ defmodule OffBroadway.Polyn.ProducerTest do
   end
 
   describe "mock integration" do
+    setup :default_stream
+
     test "valid messages are converted to Event structs" do
       Polyn.MockNats.pub(@conn_name, "company.created.v1", """
       {
@@ -408,9 +402,79 @@ defmodule OffBroadway.Polyn.ProducerTest do
     end
   end
 
+  describe "custom stream" do
+    setup do
+      stream = %Stream{name: "PRODUCER_TEST_CUSTOM_STREAM", subjects: @stream_subjects}
+      {:ok, _response} = Stream.create(@conn_name, stream)
+
+      consumer = %Consumer{
+        stream_name: "PRODUCER_TEST_CUSTOM_STREAM",
+        durable_name: @consumer_name
+      }
+
+      {:ok, _response} = Consumer.create(@conn_name, consumer)
+
+      on_exit(fn ->
+        cleanup(fn pid ->
+          # This needs to happen in `on_exit` or the test gets
+          # super slow (30s) cleaning up. Not sure why.
+          Stream.delete(pid, stream.name)
+        end)
+      end)
+    end
+
+    test "can use a non-conventional stream name" do
+      start_pipeline(stream_name: "PRODUCER_TEST_CUSTOM_STREAM")
+
+      Polyn.pub(
+        @conn_name,
+        "company.created.v1",
+        %{
+          "name" => "Toph",
+          "element" => "earth"
+        },
+        headers: [],
+        store_name: @store_name
+      )
+
+      assert_receive(
+        {:received_event,
+         %Message{
+           data: %Event{
+             type: "com.test.company.created.v1",
+             data: %{
+               "name" => "Toph",
+               "element" => "earth"
+             }
+           }
+         }}
+      )
+    end
+  end
+
+  defp default_stream(_context) do
+    stream = %Stream{name: @stream_name, subjects: @stream_subjects}
+    {:ok, _response} = Stream.create(@conn_name, stream)
+
+    consumer = %Consumer{stream_name: @stream_name, durable_name: @consumer_name}
+    {:ok, _response} = Consumer.create(@conn_name, consumer)
+
+    on_exit(fn ->
+      cleanup(fn pid ->
+        :ok = Consumer.delete(pid, @stream_name, @consumer_name)
+        :ok = Stream.delete(pid, @stream_name)
+      end)
+    end)
+
+    :ok
+  end
+
   defp start_pipeline(opts \\ []) do
     start_supervised!(
-      {ExampleBroadwayPipeline, test_pid: self(), sandbox: Keyword.get(opts, :sandbox, false)}
+      {ExampleBroadwayPipeline,
+       test_pid: self(),
+       sandbox: Keyword.get(opts, :sandbox, false),
+       stream_name: Keyword.get(opts, :stream_name)}
     )
   end
 end

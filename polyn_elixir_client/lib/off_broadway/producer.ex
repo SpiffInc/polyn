@@ -24,6 +24,8 @@ with {:module, _} <- Code.ensure_compiled(Broadway) do
     by using the passed `type` and configured `:source_root`. You can pass in a `:source` to `:module`
     to get a more specific `:consumer_name`.
 
+    You can pass in `:stream_name` to `:module` to use a `stream_name` not derived from the `type`
+
     ## Example
 
     ```elixir
@@ -114,8 +116,11 @@ with {:module, _} <- Code.ensure_compiled(Broadway) do
       response = state.producer.handle_demand(incoming_demand, state)
 
       case Tuple.to_list(response) do
-        [:noreply, messages, state | rest] -> process_messages(messages, state, rest)
-        _other -> response
+        [:noreply, messages, state | rest] ->
+          process_messages(messages, state, rest)
+
+        _other ->
+          response
       end
     end
 
@@ -186,12 +191,15 @@ with {:module, _} <- Code.ensure_compiled(Broadway) do
     defp add_consumer_and_stream_name(opts) do
       type = Keyword.fetch!(opts, :type)
       source = Keyword.get(opts, :source)
-      conn = Keyword.get(opts, :connection_name)
       consumer_name = Polyn.Naming.consumer_name(type, source)
-      stream_name = Polyn.Jetstream.lookup_stream_name!(conn, type)
 
-      Keyword.put(opts, :stream_name, stream_name)
+      Keyword.put(opts, :stream_name, stream_name(opts))
       |> Keyword.put(:consumer_name, consumer_name)
+    end
+
+    defp stream_name(opts) do
+      opts[:stream_name] ||
+        Polyn.Jetstream.lookup_stream_name!(opts[:connection_name], opts[:type])
     end
 
     defp producer(opts) do
