@@ -5,7 +5,7 @@ module Polyn
     ##
     # Configuration data for Polyn::Cli
     class Configuration
-      attr_reader :polyn_env, :nats_servers, :nats_credentials
+      attr_reader :polyn_env, :nats_servers, :nats_credentials, :nats_ca_file
 
       def initialize
         @polyn_env        = ENV["POLYN_ENV"] || "development"
