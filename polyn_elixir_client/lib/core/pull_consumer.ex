@@ -36,7 +36,7 @@ defmodule Polyn.PullConsumer do
   use Polyn.Tracing
   alias Polyn.Serializers.JSON
 
-  defstruct [:module, :state, :store_name, :connection_name, :type, :source]
+  defstruct [:module, :state, :store_name, :connection_name, :type, :source, :stream_name]
 
   @doc """
   Invoked when the server is started. `start_link/3` or `start/3` will block until it returns.
@@ -82,12 +82,14 @@ defmodule Polyn.PullConsumer do
   * `:type` - Required. The event type to consume
   * `:connection_name` - Required. The Gnat connection identifier
   * `:source` - Optional. More specific name for the consumer to add to the `:source_root`
+  * `:stream_name` - Optional. Choose a specific stream name not derived from the `type`
   * All other options will be assumed to be GenServer options
   """
   @type option ::
           {:type, binary()}
           | {:source, binary()}
           | {:connection_name, Gnat.t()}
+          | {:stream_name, binary()}
           | GenServer.option()
 
   @doc false
@@ -217,14 +219,18 @@ defmodule Polyn.PullConsumer do
     end
   end
 
-  defp connection_options(%{
-         type: type,
-         source: source,
-         connection_name: connection_name
-       }) do
-    consumer_name = Polyn.Naming.consumer_name(type, source)
-    stream = Polyn.Jetstream.lookup_stream_name!(connection_name, type)
-    [connection_name: connection_name, stream_name: stream, consumer_name: consumer_name]
+  defp connection_options(%{} = opts) do
+    consumer_name = Polyn.Naming.consumer_name(opts.type, opts.source)
+
+    [
+      connection_name: opts.connection_name,
+      stream_name: stream_name(opts),
+      consumer_name: consumer_name
+    ]
+  end
+
+  defp stream_name(opts) do
+    opts.stream_name || Polyn.Jetstream.lookup_stream_name!(opts.connection_name, opts.type)
   end
 
   defp pull_consumer(opts \\ []) do
