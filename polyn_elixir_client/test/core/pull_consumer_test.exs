@@ -20,11 +20,12 @@ defmodule Polyn.PullConsumerTest do
     use Polyn.PullConsumer
 
     def start_link(init_arg) do
-      {config, init_arg} = Keyword.split(init_arg, [:store_name, :sandbox])
+      {config, init_arg} = Keyword.split(init_arg, [:store_name, :sandbox, :stream_name])
 
       Polyn.PullConsumer.start_link(__MODULE__, init_arg,
         store_name: Keyword.fetch!(config, :store_name),
         sandbox: Keyword.fetch!(config, :sandbox),
+        stream_name: Keyword.get(config, :stream_name),
         connection_name: :pull_consumer_gnat,
         type: "pull.consumer.test.event.v1"
       )
@@ -69,86 +70,53 @@ defmodule Polyn.PullConsumerTest do
        ]}
     )
 
-    setup_stream()
-    setup_consumer()
-
-    on_exit(fn ->
-      cleanup(fn pid ->
-        :ok = Consumer.delete(pid, @stream_name, @consumer_name)
-        :ok = Stream.delete(pid, @stream_name)
-      end)
-    end)
+    :ok
   end
 
-  @tag capture_log: true
-  test "receives a message" do
-    Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
-    {
-      "id": "#{UUID.uuid4()}",
-      "source": "com.test.foo",
-      "type": "com.test.pull.consumer.test.event.v1",
-      "specversion": "1.0.1",
-      "data": {
-        "name": "Toph",
-        "element": "earth"
+  describe "nats integration" do
+    setup :default_stream
+
+    @tag capture_log: true
+    test "receives a message" do
+      Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
+      {
+        "id": "#{UUID.uuid4()}",
+        "source": "com.test.foo",
+        "type": "com.test.pull.consumer.test.event.v1",
+        "specversion": "1.0.1",
+        "data": {
+          "name": "Toph",
+          "element": "earth"
+        }
       }
-    }
-    """)
+      """)
 
-    Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
-    {
-      "id": "#{UUID.uuid4()}",
-      "source": "com.test.foo",
-      "specversion": "1.0.1",
-      "type": "com.test.pull.consumer.test.event.v1",
-      "data": {
-        "name": "Katara",
-        "element": "water"
+      Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
+      {
+        "id": "#{UUID.uuid4()}",
+        "source": "com.test.foo",
+        "specversion": "1.0.1",
+        "type": "com.test.pull.consumer.test.event.v1",
+        "data": {
+          "name": "Katara",
+          "element": "water"
+        }
       }
-    }
-    """)
+      """)
 
-    start_listening_for_messages()
+      start_listening_for_messages()
 
-    assert_receive(
-      {:received_event,
-       %Event{
-         type: "com.test.pull.consumer.test.event.v1",
-         data: %{
-           "name" => "Katara",
-           "element" => "water"
-         }
-       }}
-    )
+      assert_receive(
+        {:received_event,
+         %Event{
+           type: "com.test.pull.consumer.test.event.v1",
+           data: %{
+             "name" => "Katara",
+             "element" => "water"
+           }
+         }}
+      )
 
-    assert_receive(
-      {:received_event,
-       %Event{
-         type: "com.test.pull.consumer.test.event.v1",
-         data: %{
-           "name" => "Toph",
-           "element" => "earth"
-         }
-       }}
-    )
-  end
-
-  test "adds tracing" do
-    start_collecting_spans()
-
-    Polyn.pub(
-      @conn_name,
-      "pull.consumer.test.event.v1",
-      %{
-        "name" => "Toph",
-        "element" => "earth"
-      },
-      store_name: @store_name
-    )
-
-    start_listening_for_messages()
-
-    {:received_event, event} =
       assert_receive(
         {:received_event,
          %Event{
@@ -159,123 +127,154 @@ defmodule Polyn.PullConsumerTest do
            }
          }}
       )
+    end
 
-    span_attrs =
-      span_attributes(
+    test "adds tracing" do
+      start_collecting_spans()
+
+      Polyn.pub(
+        @conn_name,
         "pull.consumer.test.event.v1",
-        event.id,
-        Jason.encode!(Map.from_struct(event))
+        %{
+          "name" => "Toph",
+          "element" => "earth"
+        },
+        store_name: @store_name
       )
 
-    assert_receive(
-      {:span,
-       span_record(
-         name: "pull.consumer.test.event.v1 receive",
-         kind: "CONSUMER",
-         attributes: ^span_attrs
-       )}
-    )
-  end
+      start_listening_for_messages()
 
-  @tag capture_log: true
-  test "errors if payload is invalid" do
-    Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
-    {
-      "id": "#{UUID.uuid4()}",
-      "source": "com.test.foo",
-      "specversion": "1.0.1",
-      "type": "com.test.pull.consumer.test.event.v1",
-      "data": {
-        "name": 123,
-        "element": true
+      {:received_event, event} =
+        assert_receive(
+          {:received_event,
+           %Event{
+             type: "com.test.pull.consumer.test.event.v1",
+             data: %{
+               "name" => "Toph",
+               "element" => "earth"
+             }
+           }}
+        )
+
+      span_attrs =
+        span_attributes(
+          "pull.consumer.test.event.v1",
+          event.id,
+          Jason.encode!(Map.from_struct(event))
+        )
+
+      assert_receive(
+        {:span,
+         span_record(
+           name: "pull.consumer.test.event.v1 receive",
+           kind: "CONSUMER",
+           attributes: ^span_attrs
+         )}
+      )
+    end
+
+    @tag capture_log: true
+    test "errors if payload is invalid" do
+      Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
+      {
+        "id": "#{UUID.uuid4()}",
+        "source": "com.test.foo",
+        "specversion": "1.0.1",
+        "type": "com.test.pull.consumer.test.event.v1",
+        "data": {
+          "name": 123,
+          "element": true
+        }
       }
-    }
-    """)
+      """)
 
-    pid = start_listening_for_messages()
-    ref = Process.monitor(pid)
+      pid = start_listening_for_messages()
+      ref = Process.monitor(pid)
 
-    assert_receive({:DOWN, ^ref, :process, ^pid, {%Polyn.ValidationException{}, _stack}}, 500)
-  end
+      assert_receive({:DOWN, ^ref, :process, ^pid, {%Polyn.ValidationException{}, _stack}}, 500)
+    end
 
-  @tag capture_log: true
-  test "receives next message after error" do
-    Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
-    {
-      "id": "#{UUID.uuid4()}",
-      "source": "com.test.foo",
-      "specversion": "1.0.1",
-      "type": "com.test.pull.consumer.test.event.v1",
-      "data": {
-        "name": 123,
-        "element": true
+    @tag capture_log: true
+    test "receives next message after error" do
+      Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
+      {
+        "id": "#{UUID.uuid4()}",
+        "source": "com.test.foo",
+        "specversion": "1.0.1",
+        "type": "com.test.pull.consumer.test.event.v1",
+        "data": {
+          "name": 123,
+          "element": true
+        }
       }
-    }
-    """)
+      """)
 
-    Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
-    {
-      "id": "#{UUID.uuid4()}",
-      "source": "com.test.foo",
-      "type": "com.test.pull.consumer.test.event.v1",
-      "specversion": "1.0.1",
-      "data": {
-        "name": "Toph",
-        "element": "earth"
+      Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
+      {
+        "id": "#{UUID.uuid4()}",
+        "source": "com.test.foo",
+        "type": "com.test.pull.consumer.test.event.v1",
+        "specversion": "1.0.1",
+        "data": {
+          "name": "Toph",
+          "element": "earth"
+        }
       }
-    }
-    """)
+      """)
 
-    pid = start_listening_for_messages()
-    ref = Process.monitor(pid)
+      pid = start_listening_for_messages()
+      ref = Process.monitor(pid)
 
-    assert_receive({:DOWN, ^ref, :process, ^pid, {%Polyn.ValidationException{}, _stack}}, 500)
+      assert_receive({:DOWN, ^ref, :process, ^pid, {%Polyn.ValidationException{}, _stack}}, 500)
 
-    assert_receive(
-      {:received_event,
-       %Event{
-         type: "com.test.pull.consumer.test.event.v1",
-         data: %{
-           "name" => "Toph",
-           "element" => "earth"
-         }
-       }},
-      2_000
-    )
-  end
+      assert_receive(
+        {:received_event,
+         %Event{
+           type: "com.test.pull.consumer.test.event.v1",
+           data: %{
+             "name" => "Toph",
+             "element" => "earth"
+           }
+         }},
+        2_000
+      )
+    end
 
-  @tag capture_log: true
-  test "errors if stream doesn't exist" do
-    Stream.delete(@conn_name, @stream_name)
+    @tag capture_log: true
+    test "errors if stream doesn't exist" do
+      Stream.delete(@conn_name, @stream_name)
 
-    Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
-    {
-      "id": "abc",
-      "source": "com.test.foo",
-      "type": "com.test.pull.consumer.test.event.v1",
-      "specversion": "1.0.1",
-      "data": {
-        "name": "Toph",
-        "element": "earth"
+      Gnat.pub(@conn_name, "pull.consumer.test.event.v1", """
+      {
+        "id": "abc",
+        "source": "com.test.foo",
+        "type": "com.test.pull.consumer.test.event.v1",
+        "specversion": "1.0.1",
+        "data": {
+          "name": "Toph",
+          "element": "earth"
+        }
       }
-    }
-    """)
+      """)
 
-    # Catching runtime error because that's what happen when supervisor can't start a child_spec
-    %{message: message} =
-      assert_raise(RuntimeError, fn ->
-        start_listening_for_messages()
-      end)
+      # Catching runtime error because that's what happen when supervisor can't start a child_spec
+      %{message: message} =
+        assert_raise(RuntimeError, fn ->
+          start_listening_for_messages()
+        end)
 
-    assert message =~ "Polyn.StreamException"
-    assert message =~ "Could not find any streams for type pull.consumer.test.event.v1"
+      assert message =~ "Polyn.StreamException"
+      assert message =~ "Could not find any streams for type pull.consumer.test.event.v1"
 
-    # recreate these so the cleanup function works
-    setup_stream()
-    setup_consumer()
+      # recreate these so the cleanup function works
+      setup_stream()
+      setup_consumer()
+    end
   end
 
   describe "mock integration" do
+    setup :default_stream
+
     test "receives a message" do
       MockNats.pub(@conn_name, "pull.consumer.test.event.v1", """
       {
@@ -333,11 +332,65 @@ defmodule Polyn.PullConsumerTest do
     end
   end
 
+  test "custom stream name" do
+    stream = %Stream{name: "PULL_CONSUMER_TEST_CUSTOM_STREAM", subjects: @stream_subjects}
+    {:ok, _response} = Stream.create(@conn_name, stream)
+
+    consumer = %Consumer{
+      stream_name: "PULL_CONSUMER_TEST_CUSTOM_STREAM",
+      durable_name: @consumer_name
+    }
+
+    {:ok, _response} = Consumer.create(@conn_name, consumer)
+
+    Polyn.pub(
+      @conn_name,
+      "pull.consumer.test.event.v1",
+      %{
+        name: "Toph",
+        element: "earth"
+      },
+      store_name: @store_name
+    )
+
+    start_listening_for_messages(stream_name: "PULL_CONSUMER_TEST_CUSTOM_STREAM")
+
+    assert_receive(
+      {:received_event,
+       %Event{
+         type: "com.test.pull.consumer.test.event.v1",
+         data: %{
+           "name" => "Toph",
+           "element" => "earth"
+         }
+       }}
+    )
+
+    assert :ok = Stream.delete(@conn_name, stream.name)
+  end
+
   defp start_listening_for_messages(opts \\ []) do
     start_supervised!(
       {ExamplePullConsumer,
-       test_pid: self(), store_name: @store_name, sandbox: Keyword.get(opts, :sandbox, false)}
+       test_pid: self(),
+       store_name: @store_name,
+       sandbox: Keyword.get(opts, :sandbox, false),
+       stream_name: Keyword.get(opts, :stream_name)}
     )
+  end
+
+  defp default_stream(_context) do
+    setup_stream()
+    setup_consumer()
+
+    on_exit(fn ->
+      cleanup(fn pid ->
+        :ok = Consumer.delete(pid, @stream_name, @consumer_name)
+        :ok = Stream.delete(pid, @stream_name)
+      end)
+    end)
+
+    :ok
   end
 
   defp setup_stream do
