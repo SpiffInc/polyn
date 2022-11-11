@@ -14,6 +14,7 @@ defmodule Polyn.JSONStore do
   @type option ::
           {:connection_name, Gnat.t()}
           | {:store_name, binary()}
+          | {:contents, map()}
           | {:retry_interval, pos_integer()}
           | GenServer.option()
 
@@ -52,7 +53,14 @@ defmodule Polyn.JSONStore do
   @doc false
   @spec save(pid :: pid(), key :: binary(), value :: map()) :: :ok
   def save(pid, key, value) when is_map(value) do
-    GenServer.call(pid, {:save, key, Jason.encode!(value)})
+    GenServer.call(pid, {:save, key, encode(value)})
+  end
+
+  defp encode(schema) do
+    case Jason.encode(schema) do
+      {:ok, encoded} -> encoded
+      {:error, reason} -> raise Polyn.JSONStoreException, inspect(reason)
+    end
   end
 
   # Remove a key
