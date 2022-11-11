@@ -103,4 +103,6 @@ defmodule Polyn.SchemaStore do
   def store_name(opts \\ []) do
     Keyword.get(opts, :name, @store_name)
   end
+
+  defdelegate process_name(store_name), to: JSONStore
 end

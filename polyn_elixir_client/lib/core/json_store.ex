@@ -38,7 +38,8 @@ defmodule Polyn.JSONStore do
     GenServer.start_link(__MODULE__, store_args, server_opts)
   end
 
-  # Get a process name for a given store name
+  # Get a process name for a given store name. We expect there to be one server per
+  # store so by making the names the same we don't have to pass a `pid` around as well
   @doc false
   def process_name(store_name) when is_binary(store_name), do: String.to_atom(store_name)
   def process_name(store_name) when is_atom(store_name), do: store_name
