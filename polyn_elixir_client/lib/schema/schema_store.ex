@@ -24,7 +24,9 @@ defmodule Polyn.SchemaStore do
 
   @type option :: JSONStore.option() | {:schemas, map()}
 
-  defdelegate child_spec(opts), to: JSONStore
+  def child_spec(opts) do
+    %{id: __MODULE__, start: {__MODULE__, :start_link, [opts]}}
+  end
 
   @doc """
   Start a new SchemaStore process
