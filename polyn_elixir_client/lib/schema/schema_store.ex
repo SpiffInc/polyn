@@ -38,7 +38,7 @@ defmodule Polyn.SchemaStore do
   def start_link(opts) do
     opts =
       Keyword.put_new(opts, :store_name, @store_name)
-      |> Keyword.put(:schemas, opts[:contents])
+      |> Keyword.put(:contents, opts[:schemas])
 
     JSONStore.start_link(opts)
   end
