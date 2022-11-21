@@ -18,7 +18,7 @@ module Polyn
 
       def initialize(thor, **opts)
         @thor               = thor
-        @client             = NATS.connect(Polyn::Cli.configuration.nats_servers).jetstream
+        @client             = connect
         @store_name         = opts.fetch(:store_name, STORE_NAME)
         @bucket             = client.key_value(@store_name)
         @cloud_event_schema = Polyn::Cli::CloudEvent.to_h.freeze
@@ -52,6 +52,20 @@ module Polyn
         :store_name,
         :existing_events
 
+      def connect
+        opts = {
+          max_reconnect_attempts: 5,
+          reconnect_time_wait:    0.5,
+          servers:                Polyn::Cli.configuration.nats_servers.split(","),
+        }
+
+        if Polyn::Cli.configuration.nats_tls
+          opts.tls = { context: ::OpenSSL::SSL::SSLContext.new(:TLSv1_2) }
+        end
+
+        NATS.connect(opts).jetstream
+      end
+
       def read_events
         event_files = Dir.glob(File.join(events_dir, "/**/*.json"))
         validate_unique_event_types!(event_files)
@@ -70,16 +84,16 @@ module Polyn
 
       def validate_unique_event_types!(event_files)
         duplicates = find_duplicates(event_files)
-        unless duplicates.empty?
-          messages = duplicates.reduce([]) do |memo, (event_type, files)|
-            memo << [event_type, *files].join("\n")
-          end
-          message  = [
-            "There can only be one of each event type. The following events were duplicated:",
-            *messages,
-          ].join("\n")
-          raise Polyn::Cli::ValidationError, message
+        return if duplicates.empty?
+
+        messages = duplicates.reduce([]) do |memo, (event_type, files)|
+          memo << [event_type, *files].join("\n")
         end
+        message  = [
+          "There can only be one of each event type. The following events were duplicated:",
+          *messages,
+        ].join("\n")
+        raise Polyn::Cli::ValidationError, message
       end
 
       def find_duplicates(event_files)
