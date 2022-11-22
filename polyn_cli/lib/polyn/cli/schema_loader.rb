@@ -60,7 +60,7 @@ module Polyn
         }
 
         if Polyn::Cli.configuration.nats_tls
-          opts.tls = { context: ::OpenSSL::SSL::SSLContext.new(:TLSv1_2) }
+          opts[:tls] = { context: ::OpenSSL::SSL::SSLContext.new(:TLSv1_2) }
         end
 
         NATS.connect(opts).jetstream
