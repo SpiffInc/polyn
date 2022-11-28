@@ -1,11 +1,10 @@
 PATH
   remote: .
   specs:
-    polyn (0.3.0)
+    polyn (0.3.1)
       json_schemer (~> 0.2)
       nats-pure (~> 2.0)
       opentelemetry-api (~> 1.1)
-      yard (~> 0.9)
 
 GEM
   remote: https://rubygems.org/
@@ -75,9 +74,6 @@ GEM
     timecop (0.9.4)
     unicode-display_width (2.1.0)
     uri_template (0.7.0)
-    webrick (1.7.0)
-    yard (0.9.28)
-      webrick (~> 1.7.0)
 
 PLATFORMS
   arm64-darwin-20
