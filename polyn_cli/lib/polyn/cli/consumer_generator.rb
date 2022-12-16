@@ -20,22 +20,22 @@ module Polyn
       def check_names
         Polyn::Cli::Naming.validate_stream_name!(stream_name)
         Polyn::Cli::Naming.validate_destination_name!(destination_name)
-        Polyn::Cli::Naming.validate_event_type!(event_type)
+        Polyn::Cli::Naming.validate_message_name!(event_type)
       end
 
       def check_stream_existance
-        unless File.exist?(file_path)
-          raise Polyn::Cli::Error,
-            "You must first create a stream configuration with "\
-            "`polyn gen:stream #{format_stream_name}`"
-        end
+        return if File.exist?(file_path)
+
+        raise Polyn::Cli::Error,
+          "You must first create a stream configuration with "\
+          "`polyn gen:stream #{format_stream_name}`"
       end
 
       def check_event_type_schema
-        unless File.exist?(File.join(options.dir, "events", "#{event_type}.json"))
-          raise Polyn::Cli::Error,
-            "You must first create a schema with `polyn gen:schema #{event_type}`"
-        end
+        return if File.exist?(File.join(options.dir, "events", "#{event_type}.json"))
+
+        raise Polyn::Cli::Error,
+          "You must first create a schema with `polyn gen:schema #{event_type}`"
       end
 
       def format_stream_name

@@ -35,11 +35,9 @@ module Polyn
     # Validate the `source` name and raise if invalid
     def self.validate_source_name!(name)
       message = validate_source_name(name)
-      if message == true
-        name
-      else
-        raise Polyn::Errors::ValidationError, message
-      end
+      raise Polyn::Errors::ValidationError, message unless message == true
+
+      name
     end
 
     ##
@@ -56,7 +54,7 @@ module Polyn
 
     ##
     # Validate the event type
-    def self.validate_event_type!(name)
+    def self.validate_message_name!(name)
       if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:\.[a-z0-9]+)*\z/)
         name
       else
@@ -75,7 +73,7 @@ module Polyn
     ##
     # Create a consumer name from a source and type
     def self.consumer_name(type, source = nil)
-      validate_event_type!(type)
+      validate_message_name!(type)
       type = trim_domain_prefix(type)
       type = type.gsub(".", "_")
 

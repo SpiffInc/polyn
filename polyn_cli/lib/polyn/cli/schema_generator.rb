@@ -26,7 +26,7 @@ module Polyn
       end
 
       def check_name
-        Polyn::Cli::Naming.validate_event_type!(type)
+        Polyn::Cli::Naming.validate_message_name!(type)
       end
 
       def file_name
