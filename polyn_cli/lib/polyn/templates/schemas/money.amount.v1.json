@@ -1,0 +1,15 @@
+{
+  "$id": "money:amount:v1",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "The id of the widget"
+    },
+    "name": {
+      "type": "string",
+      "description": "The name of the widget"
+    }
+  },
+  "required": ["id", "name"]
+}
