@@ -3,14 +3,14 @@
 module Polyn
   class Cli
     ##
-    # Loads the JSON schmea into the event registry.
+    # Loads the JSON schema into the schema registry.
     class SchemaLoader
       include Thor::Actions
 
       STORE_NAME = "POLYN_SCHEMAS"
 
       ##
-      # Loads the events from the event repository into the Polyn event registry.
+      # Loads the schemas from the schema repository into the Polyn schema registry.
       # @return [Bool]
       def self.load(cli)
         new(cli).load_schemas

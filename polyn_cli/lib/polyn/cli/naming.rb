@@ -24,7 +24,7 @@ module Polyn
         return if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:(?:\.|:)[a-z0-9]+)*\z/)
 
         raise Polyn::Cli::Error,
-          "Event destination must be lowercase, alphanumeric and dot/colon separated, got #{name}"
+          "Message destination must be lowercase, alphanumeric and dot/colon separated, got #{name}"
       end
 
       def self.validate_message_name!(name)

@@ -3,11 +3,11 @@
 module Polyn
   class Cli
     ##
-    # Generates a new JSON Schema file for an event
+    # Generates a new JSON Schema file for a message
     class SchemaGenerator < Thor::Group
       include Thor::Actions
 
-      desc "Generates a new JSON Schema file for an event"
+      desc "Generates a new JSON Schema file for a message"
 
       argument :message_name, required: true
       class_option :dir, default: Dir.getwd

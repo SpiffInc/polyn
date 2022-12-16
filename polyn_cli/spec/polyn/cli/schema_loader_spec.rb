@@ -3,7 +3,7 @@
 require "spec_helper"
 
 RSpec.describe Polyn::Cli::SchemaLoader do
-  describe "#load_events" do
+  describe "#load_schemas" do
     include_context :tmp_dir
 
     let(:store_name) { "SCHEMA_LOADER_TEST_STORE" }

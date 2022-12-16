@@ -74,7 +74,7 @@ RSpec.describe Polyn::Cli do
       end.to raise_error(Polyn::Cli::Error)
     end
 
-    it "it raises if the event has no schema" do
+    it "it raises if the message has no schema" do
       subject.invoke("gen:stream", ["foo_stream"], { dir: tmp_dir })
       expect do
         subject.invoke("gen:consumer", ["foo_stream", "users.backend", "user.updated.v1"],
@@ -100,7 +100,7 @@ RSpec.describe Polyn::Cli do
       end.to raise_error(Polyn::Cli::Error)
     end
 
-    it "raises if event_type name is invalid" do
+    it "raises if message name is invalid" do
       subject.invoke("gen:stream", ["foo_stream"], { dir: tmp_dir })
       add_schema
       expect do
@@ -128,7 +128,7 @@ RSpec.describe Polyn::Cli do
       expect(file).to include(%("$id": "foo"))
     end
 
-    it "raises if event_type is invalid" do
+    it "raises if message nameis invalid" do
       expect do
         subject.invoke("gen:schema", ["foo bar baz"], { dir: tmp_dir })
       end.to raise_error(Polyn::Cli::Error)

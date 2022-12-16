@@ -9,9 +9,9 @@ module Polyn
 
       desc "Generates a new NATS Consumer configuration for a stream"
 
-      argument :stream_name, required: true, desc: "The name of the stream to consume events from"
+      argument :stream_name, required: true, desc: "The name of the stream to consume messages from"
       argument :destination_name, required: true,
-        desc: "The name of the application, service, or component consuming the event"
+        desc: "The name of the application, service, or component consuming the message"
       argument :message_name, required: true, desc: "The name of the message being consumed"
       class_option :dir, default: Dir.getwd
 
