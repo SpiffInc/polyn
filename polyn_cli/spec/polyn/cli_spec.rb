@@ -51,7 +51,7 @@ RSpec.describe Polyn::Cli do
     include_context :tmp_dir
 
     before(:each) do
-      Dir.mkdir(File.join(tmp_dir, "events"))
+      Dir.mkdir(File.join(tmp_dir, "schemas"))
     end
 
     it "it adds consumer config to existing stream file" do
@@ -136,7 +136,7 @@ RSpec.describe Polyn::Cli do
   end
 
   def add_schema
-    File.open(File.join(tmp_dir, "events/user.updated.v1.json"), "w+") do |file|
+    File.open(File.join(tmp_dir, "schemas/user.updated.v1.json"), "w+") do |file|
       file.write("boo!")
     end
   end
