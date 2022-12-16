@@ -20,7 +20,7 @@ RSpec.describe Polyn::Cli do
       expect(File.exist?(File.join(tmp_dir, "tf/variables.tf"))).to be true
       expect(File.exist?(File.join(tmp_dir, "tf/versions.tf"))).to be true
       expect(File.exist?(File.join(tmp_dir, "tf/widgets.tf"))).to be true
-      expect(File.exist?(File.join(tmp_dir, "events/widgets.created.v1.json"))).to be true
+      expect(File.exist?(File.join(tmp_dir, "schemas/widgets.created.v1.json"))).to be true
       expect(File.exist?(File.join(tmp_dir, "README.md"))).to be true
       expect(File.exist?(File.join(tmp_dir, "Gemfile"))).to be true
       expect(File.read(File.join(tmp_dir, "Gemfile"))).to include(Polyn::Cli::VERSION)

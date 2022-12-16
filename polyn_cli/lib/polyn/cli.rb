@@ -52,7 +52,7 @@ module Polyn
       def init
         say "Initializing Polyn event repository"
         directory "tf", File.join(options.dir, "tf")
-        directory "events", File.join(options.dir, "events")
+        directory "schemas", File.join(options.dir, "schemas")
         template "docker-compose.yml", File.join(options.dir, "docker-compose.yml")
         template "Dockerfile", File.join(options.dir, "Dockerfile")
         template ".dockerignore", File.join(options.dir, ".dockerignore")
