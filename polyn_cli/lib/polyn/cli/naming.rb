@@ -21,17 +21,11 @@ module Polyn
       end
 
       def self.validate_destination_name!(name)
-        unless name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:(?:\.|:)[a-z0-9]+)*\z/)
-          raise Polyn::Cli::Error,
-            "Event destination must be lowercase, alphanumeric and dot/colon separated, got #{name}"
-        end
-      end
+      def self.validate_message_name!(name)
+        return if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:\.[a-z0-9]+)*\z/)
 
-      def self.validate_event_type!(name)
-        unless name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:\.[a-z0-9]+)*\z/)
-          raise Polyn::Cli::Error,
-            "Event types must be lowercase, alphanumeric and dot separated"
-        end
+        raise Polyn::Cli::Error,
+          "Message names must be lowercase, alphanumeric and dot separated"
       end
 
       def self.dot_to_underscore(name)
