@@ -114,7 +114,7 @@ RSpec.describe Polyn::Cli do
     include_context :tmp_dir
     it "it creates a new schema file" do
       subject.invoke("gen:schema", ["foo"], { dir: tmp_dir })
-      path = File.join(tmp_dir, "events/foo.json")
+      path = File.join(tmp_dir, "schemas/foo.json")
       expect(File.exist?(path)).to be true
       file = File.read(path)
       expect(file).to include(%("$id": "foo"))
@@ -122,7 +122,7 @@ RSpec.describe Polyn::Cli do
 
     it "it creates a new schema file in a subdirectory" do
       subject.invoke("gen:schema", ["some/deep/dir/foo"], { dir: tmp_dir })
-      path = File.join(tmp_dir, "events/some/deep/dir/foo.json")
+      path = File.join(tmp_dir, "schemas/some/deep/dir/foo.json")
       expect(File.exist?(path)).to be true
       file = File.read(path)
       expect(file).to include(%("$id": "foo"))
