@@ -66,7 +66,7 @@ like a database migration.
 
 #### Publishing
 
-When an event is published, the Polyn client validates the event against the pre-defined schema for that event. The schema is a [CloudEvent JSON](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md) compliant [JSON Schema](https://json-schema.org/) published by the Polyn application to an internal repository on startup.
+When an event is published, the Polyn client validates the event against the pre-defined schema for that event. The schema is a [CloudEvent JSON](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md) compliant [JSON Schema](https://json-schema.org/) published from a central `schemas` respository to a NATS Key-Value store.
 
 Once validation is complete, the event is published to the message bus.
 
@@ -78,7 +78,7 @@ Once the event has been processed, it is acknowledged, making way for the next e
 
 ### Schema Repository
 
-When a Polyn application starts, the client publishes all of the event schema for that application to the schema repository. Before doing so, it compares the existing schema in the repository for the events of the same type, against the schema to be published, and will throw an error if the new schema is not backwards compatible with the old. The schema respository should be called `POLYN_SCHEMAS`
+When a central `schemas` respository is deployed, the [Polyn CLI](https://github.com/SpiffInc/polyn/tree/main/polyn_cli) publishes all of the message schema for that application to the schema repository. Before doing so, it compares the existing schema in the repository for the against the schema to be published, and will throw an error if the new schema is not backwards compatible with the old. The schema respository should be called `POLYN_SCHEMAS`
 
 ### Error Handling
 
@@ -87,7 +87,7 @@ Because components are stateless, Polyn clients adopt a "let it fail" approach t
 
 When validation errors happen, either on the Producer or Consumer side, Polyn implementations will raise an error. The advantage of raising an error when validations fail is that monitoring and alerting tools will have an obvious indication that an event contract has been broken at the exact time that it happens. This makes it much easier to respond to problems quickly and debug them easily. The opposite of this would be to catch the error and allow the Consumer/Producer to decide what to do with it. This gives the Consumer/Producer more of a chance to recover from a broken contract, but increases the likelihood that a failure will happen in a more accidental, unpredictable, harder-to-debug way. If the event isn't adhering to the contract something is probably going to break. We might as well control it the failure so we can address the issue faster.
 
-Polyn applications maintain a schema repository that contains the [CloudEvent JSON]()
+Polyn applications maintain a schema repository that contains the [CloudEvent JSON](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md)
 compliant [JSON Schema](https://json-schema.org/). The event structure is validated against the schema both before publishing and after receiving events. The schema represents a contract between publisher and subscribers, ensuring events do not mutate in a way that prevents subscribers from consuming the events and accomplishing its task.
 
 Polyn aims to ensure every event is explicit about what format its `data` takes. Even if the schema is just `{ "type" => "null" }` we want the event to be explicit that the event allows for empty data so that Consumers know that an empty paylod is not an accident. Any time an event is published or consumed it MUST be validated against a [JSON Schema](https://json-schema.org/). Both the CloudEvent schema and the `data` schema must be valid.

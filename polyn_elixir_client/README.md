@@ -37,7 +37,7 @@ specification to create consistency.
 
 ## Schema Creation
 
-In order for Polyn to process and validate event schemas you will need to use [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to create an `events` codebase. Once your `events` codebase is created you can create and manage your schemas there.
+In order for Polyn to process and validate message schemas you will need to use [Polyn CLI](https://github.com/SpiffInc/polyn/tree/main/polyn_cli) to create an `schemas` codebase. Once your `schemas` codebase is created you can create and manage your schemas there.
 
 ## Configuration
 

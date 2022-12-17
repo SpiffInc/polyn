@@ -108,7 +108,7 @@ The Schema Store has not been setup on your NATS server. Make sure you use the P
 If there's no schema for the event `type`, Polyn MUST raise an exception that says:
 
 ```
-Schema for #{type} does not exist. Make sure it's been added to your `events` codebase and has been loaded into the schema store on your NATS server
+Schema for #{type} does not exist. Make sure it's been added to your `schemas` codebase and has been loaded into the schema store on your NATS server
 ```
 
 If a received message can't be parsed as JSON, Polyn MUST raise an exception that says:
@@ -165,8 +165,7 @@ For example, if the application reverse domain were `app.widgets`, and the compo
 were the `new_widget_notifier` component, and that component was subscribing to `app.widgets.created.v1`,
 the `new_widget_notifier_app_widgets_created_v1`.
 
-A Polyn client MUST NOT attempt to set up its own consumers. This is handled by the [Polyn CLI](https://github.com/SpiffInc/polyn-cli)
-within the [events repository]()
+A Polyn client MUST NOT attempt to set up its own consumers. This is handled by the [Polyn CLI](https://github.com/SpiffInc/polyn/tree/main/polyn_cli) within the generated `schemas` repository
 
 If a consumer does not exist when attempting to subscribe Polyn MUST raise an exception that says
 
