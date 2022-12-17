@@ -2,14 +2,14 @@
   "$id": "money:amount:v1",
   "type": "object",
   "properties": {
-    "id": {
+    "currency": {
       "type": "string",
-      "description": "The id of the widget"
+      "description": "currency code for the amount"
     },
-    "name": {
-      "type": "string",
-      "description": "The name of the widget"
+    "amount": {
+      "type": "number",
+      "description": "amount of money"
     }
   },
-  "required": ["id", "name"]
+  "required": ["currency", "amount"]
 }
