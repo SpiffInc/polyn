@@ -118,7 +118,7 @@ module Polyn
     ##
     # Get the Event `type` prefixed with reverse domain name
     def self.full_type(type)
-      Polyn::Naming.validate_event_type!(type)
+      Polyn::Naming.validate_message_name!(type)
       "#{domain}.#{Polyn::Naming.trim_domain_prefix(type)}"
     end
 

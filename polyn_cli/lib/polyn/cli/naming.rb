@@ -10,10 +10,10 @@ module Polyn
       end
 
       def self.validate_stream_name!(name)
-        unless name.match(/^[a-zA-Z0-9_]+$/)
-          raise Polyn::Cli::Error,
-            "Stream name must be all alphanumeric, uppercase, and underscore separated. Got #{name}"
-        end
+        return if name.match(/^[a-zA-Z0-9_]+$/)
+
+        raise Polyn::Cli::Error,
+          "Stream name must be all alphanumeric, uppercase, and underscore separated. Got #{name}"
       end
 
       def self.format_stream_name(name)
@@ -21,17 +21,17 @@ module Polyn
       end
 
       def self.validate_destination_name!(name)
-        unless name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:(?:\.|:)[a-z0-9]+)*\z/)
-          raise Polyn::Cli::Error,
-            "Event destination must be lowercase, alphanumeric and dot/colon separated, got #{name}"
-        end
+        return if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:(?:\.|:)[a-z0-9]+)*\z/)
+
+        raise Polyn::Cli::Error,
+          "Message destination must be lowercase, alphanumeric and dot/colon separated, got #{name}"
       end
 
-      def self.validate_event_type!(name)
-        unless name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:\.[a-z0-9]+)*\z/)
-          raise Polyn::Cli::Error,
-            "Event types must be lowercase, alphanumeric and dot separated"
-        end
+      def self.validate_message_name!(name)
+        return if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:\.[a-z0-9]+)*\z/)
+
+        raise Polyn::Cli::Error,
+          "Message names must be lowercase, alphanumeric and dot separated"
       end
 
       def self.dot_to_underscore(name)

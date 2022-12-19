@@ -10,9 +10,9 @@ gem install 'polyn-cli'
 
 ## Usage
 
-### Create New Events Codebase
+### Create New Schemas Codebase
 
-Run `polyn init` inside a directory to create a new `events` respository for managing your event schemas and NATS server configuration
+Run `polyn init` inside a directory to create a new `schemas` respository for managing your message schemas and NATS server configuration
 
 ### Stream Generator
 
@@ -20,11 +20,11 @@ Run `polyn gen:stream <stream_name>` to generate a new configuration file for a 
 
 ### Schema Generator
 
-Run `polyn gen:schema <event_type>` to generate a new JSON Schema for an event
+Run `polyn gen:schema <schema_name>` to generate a new JSON Schema for a message
 
 ### Consumer Generator
 
-Run `polyn gen:consumer <stream_name> <destination_name> <event_type>` to generate new configuration for a consumer of a stream. It will be included in the same file as the stream configuration.
+Run `polyn gen:consumer <stream_name> <destination_name> <schema_name>` to generate new configuration for a consumer of a stream. It will be included in the same file as the stream configuration.
 
 ### Updating NATS Configuration and Schemas
 

@@ -3,43 +3,43 @@
 module Polyn
   class Cli
     ##
-    # Generates a new JSON Schema file for an event
+    # Generates a new JSON Schema file for a message
     class SchemaGenerator < Thor::Group
       include Thor::Actions
 
-      desc "Generates a new JSON Schema file for an event"
+      desc "Generates a new JSON Schema file for a message"
 
-      argument :event_type, required: true
+      argument :message_name, required: true
       class_option :dir, default: Dir.getwd
 
       source_root File.join(File.expand_path(__dir__), "../templates")
 
-      def type
-        @type ||= event_type.split("/").last
+      def name
+        @name ||= message_name.split("/").last
       end
 
       def subdir
         @subdir ||= begin
-          split = event_type.split("/") - [type]
+          split = message_name.split("/") - [name]
           split.join("/")
         end
       end
 
       def check_name
-        Polyn::Cli::Naming.validate_event_type!(type)
+        Polyn::Cli::Naming.validate_message_name!(name)
       end
 
       def file_name
-        @file_name ||= File.join(subdir, "#{type}.json")
+        @file_name ||= File.join(subdir, "#{name}.json")
       end
 
       def schema_id
-        Polyn::Cli::Naming.dot_to_colon(type)
+        Polyn::Cli::Naming.dot_to_colon(name)
       end
 
       def create
         say "Creating new schema for #{file_name}"
-        template "generators/schema.json", File.join(options.dir, "events/#{file_name}")
+        template "generators/schema.json", File.join(options.dir, "schemas/#{file_name}")
       end
     end
   end

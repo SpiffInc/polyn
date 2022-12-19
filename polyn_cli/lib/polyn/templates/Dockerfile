@@ -5,8 +5,8 @@ RUN gem install bundler
 RUN bundle install
 
 FROM base as app
-WORKDIR /events
-ADD events ./events
+WORKDIR /schemas
+ADD schemas ./schemas
 ADD tf ./tf
 
 FROM app as dev

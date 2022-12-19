@@ -34,7 +34,7 @@ And then execute:
 
 ## Schema Creation
 
-In order for Polyn to process and validate event schemas you will need to use [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to create an `events` codebase. Once your `events` codebase is created you can create and manage your schemas there.
+In order for Polyn to process and validate event schemas you will need to use [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to create an `schemas` codebase. Once your `schemas` codebase is created you can create and manage your schemas there.
 
 ## Configuration
 
@@ -99,7 +99,7 @@ loop do
 end
 ```
 
-Polyn assumes you've already used [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to generate a consumer.
+Polyn assumes you've already used [Polyn CLI](https://github.com/SpiffInc/polyn/tree/main/polyn_cli) to generate a consumer.
 
 Add the `:source` option to `pull_subscribe` if your consumer name includes more than just the `source_root`. Polyn automatically finds the consumer name from the `type` you pass in.
 If your `source_root` was `user.backend` and the event type was `user.created.v1` it would look for a consumer named `user_backend_user_created_v1`. If your consumer had a more specific destination such as `notifications` you could pass that as the `:source` option and the consumer name lookup would use `user_backend_notifications_user_created_v1`.

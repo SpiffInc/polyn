@@ -1,0 +1,15 @@
+{
+  "$id": "money:amount:v1",
+  "type": "object",
+  "properties": {
+    "currency": {
+      "type": "string",
+      "description": "currency code for the amount"
+    },
+    "amount": {
+      "type": "number",
+      "description": "amount of money"
+    }
+  },
+  "required": ["currency", "amount"]
+}

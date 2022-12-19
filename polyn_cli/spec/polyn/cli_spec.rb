@@ -20,7 +20,7 @@ RSpec.describe Polyn::Cli do
       expect(File.exist?(File.join(tmp_dir, "tf/variables.tf"))).to be true
       expect(File.exist?(File.join(tmp_dir, "tf/versions.tf"))).to be true
       expect(File.exist?(File.join(tmp_dir, "tf/widgets.tf"))).to be true
-      expect(File.exist?(File.join(tmp_dir, "events/widgets.created.v1.json"))).to be true
+      expect(File.exist?(File.join(tmp_dir, "schemas/widgets.created.v1.json"))).to be true
       expect(File.exist?(File.join(tmp_dir, "README.md"))).to be true
       expect(File.exist?(File.join(tmp_dir, "Gemfile"))).to be true
       expect(File.read(File.join(tmp_dir, "Gemfile"))).to include(Polyn::Cli::VERSION)
@@ -51,7 +51,7 @@ RSpec.describe Polyn::Cli do
     include_context :tmp_dir
 
     before(:each) do
-      Dir.mkdir(File.join(tmp_dir, "events"))
+      Dir.mkdir(File.join(tmp_dir, "schemas"))
     end
 
     it "it adds consumer config to existing stream file" do
@@ -74,7 +74,7 @@ RSpec.describe Polyn::Cli do
       end.to raise_error(Polyn::Cli::Error)
     end
 
-    it "it raises if the event has no schema" do
+    it "it raises if the message has no schema" do
       subject.invoke("gen:stream", ["foo_stream"], { dir: tmp_dir })
       expect do
         subject.invoke("gen:consumer", ["foo_stream", "users.backend", "user.updated.v1"],
@@ -100,7 +100,7 @@ RSpec.describe Polyn::Cli do
       end.to raise_error(Polyn::Cli::Error)
     end
 
-    it "raises if event_type name is invalid" do
+    it "raises if message name is invalid" do
       subject.invoke("gen:stream", ["foo_stream"], { dir: tmp_dir })
       add_schema
       expect do
@@ -114,7 +114,7 @@ RSpec.describe Polyn::Cli do
     include_context :tmp_dir
     it "it creates a new schema file" do
       subject.invoke("gen:schema", ["foo"], { dir: tmp_dir })
-      path = File.join(tmp_dir, "events/foo.json")
+      path = File.join(tmp_dir, "schemas/foo.json")
       expect(File.exist?(path)).to be true
       file = File.read(path)
       expect(file).to include(%("$id": "foo"))
@@ -122,13 +122,13 @@ RSpec.describe Polyn::Cli do
 
     it "it creates a new schema file in a subdirectory" do
       subject.invoke("gen:schema", ["some/deep/dir/foo"], { dir: tmp_dir })
-      path = File.join(tmp_dir, "events/some/deep/dir/foo.json")
+      path = File.join(tmp_dir, "schemas/some/deep/dir/foo.json")
       expect(File.exist?(path)).to be true
       file = File.read(path)
       expect(file).to include(%("$id": "foo"))
     end
 
-    it "raises if event_type is invalid" do
+    it "raises if message nameis invalid" do
       expect do
         subject.invoke("gen:schema", ["foo bar baz"], { dir: tmp_dir })
       end.to raise_error(Polyn::Cli::Error)
@@ -136,7 +136,7 @@ RSpec.describe Polyn::Cli do
   end
 
   def add_schema
-    File.open(File.join(tmp_dir, "events/user.updated.v1.json"), "w+") do |file|
+    File.open(File.join(tmp_dir, "schemas/user.updated.v1.json"), "w+") do |file|
       file.write("boo!")
     end
   end

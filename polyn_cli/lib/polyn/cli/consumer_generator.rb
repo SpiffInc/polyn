@@ -9,10 +9,10 @@ module Polyn
 
       desc "Generates a new NATS Consumer configuration for a stream"
 
-      argument :stream_name, required: true, desc: "The name of the stream to consume events from"
+      argument :stream_name, required: true, desc: "The name of the stream to consume messages from"
       argument :destination_name, required: true,
-        desc: "The name of the application, service, or component consuming the event"
-      argument :event_type, required: true, desc: "The type of event being consumed"
+        desc: "The name of the application, service, or component consuming the message"
+      argument :message_name, required: true, desc: "The name of the message being consumed"
       class_option :dir, default: Dir.getwd
 
       source_root File.join(File.expand_path(__dir__), "../templates")
@@ -20,22 +20,22 @@ module Polyn
       def check_names
         Polyn::Cli::Naming.validate_stream_name!(stream_name)
         Polyn::Cli::Naming.validate_destination_name!(destination_name)
-        Polyn::Cli::Naming.validate_event_type!(event_type)
+        Polyn::Cli::Naming.validate_message_name!(message_name)
       end
 
       def check_stream_existance
-        unless File.exist?(file_path)
-          raise Polyn::Cli::Error,
-            "You must first create a stream configuration with "\
-            "`polyn gen:stream #{format_stream_name}`"
-        end
+        return if File.exist?(file_path)
+
+        raise Polyn::Cli::Error,
+          "You must first create a stream configuration with "\
+          "`polyn gen:stream #{format_stream_name}`"
       end
 
-      def check_event_type_schema
-        unless File.exist?(File.join(options.dir, "events", "#{event_type}.json"))
-          raise Polyn::Cli::Error,
-            "You must first create a schema with `polyn gen:schema #{event_type}`"
-        end
+      def check_schema
+        return if File.exist?(File.join(options.dir, "schemas", "#{message_name}.json"))
+
+        raise Polyn::Cli::Error,
+          "You must first create a schema with `polyn gen:schema #{message_name}`"
       end
 
       def format_stream_name
@@ -45,8 +45,8 @@ module Polyn
       def consumer_name
         dest = Polyn::Cli::Naming.colon_to_underscore(destination_name)
         dest = Polyn::Cli::Naming.dot_to_underscore(dest)
-        type = Polyn::Cli::Naming.dot_to_underscore(event_type)
-        "#{dest}_#{type}"
+        name = Polyn::Cli::Naming.dot_to_underscore(message_name)
+        "#{dest}_#{name}"
       end
 
       def file_name
@@ -65,7 +65,7 @@ module Polyn
             stream_id = jetstream_stream.#{stream_name}.id
             durable_name = "#{consumer_name}"
             deliver_all = true
-            filter_subject = "#{event_type}"
+            filter_subject = "#{message_name}"
             sample_freq = 100
           }
         TF

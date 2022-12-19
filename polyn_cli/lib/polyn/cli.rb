@@ -48,11 +48,11 @@ module Polyn
       end
 
       method_option :dir, default: Dir.getwd
-      desc "init", "initializes a Polyn event repository"
+      desc "init", "initializes a Polyn schema repository"
       def init
-        say "Initializing Polyn event repository"
+        say "Initializing Polyn schema repository"
         directory "tf", File.join(options.dir, "tf")
-        directory "events", File.join(options.dir, "events")
+        directory "schemas", File.join(options.dir, "schemas")
         template "docker-compose.yml", File.join(options.dir, "docker-compose.yml")
         template "Dockerfile", File.join(options.dir, "Dockerfile")
         template ".dockerignore", File.join(options.dir, ".dockerignore")
@@ -91,7 +91,7 @@ module Polyn
         end
       end
 
-      desc "up", "updates the JetStream streams and consumers, as well the Polyn event registry"
+      desc "up", "updates the JetStream streams and consumers, as well the Polyn schema registry"
       def up
         terraform_root = File.join(Dir.getwd, "tf")
         # We only want to run nats in the docker container if
@@ -110,8 +110,8 @@ module Polyn
           end
         end
 
-        say "Updating Polyn event registry"
-        Polyn::Cli::SchemaLoader.new(self).load_events
+        say "Updating Polyn schema registry"
+        Polyn::Cli::SchemaLoader.new(self).load_schemas
       end
 
       private
@@ -158,12 +158,12 @@ module Polyn
         remove_file File.join(tf_root, "backend.tf")
       end
 
-      register(Polyn::Cli::SchemaGenerator, "gen:schema", "gen:schema EVENT_TYPE",
-        "Generates a new JSON Schema file for an event")
-      register(Polyn::Cli::StreamGenerator, "gen:stream", "gen:stream NAME",
+      register(Polyn::Cli::SchemaGenerator, "gen:schema", "gen:schema SCHEMA_NAME",
+        "Generates a new JSON Schema file for an schema")
+      register(Polyn::Cli::StreamGenerator, "gen:stream", "gen:stream SCHEMA_NAME",
         "Generates a new stream configuration with boilerplate")
       register(Polyn::Cli::ConsumerGenerator, "gen:consumer",
-        "gen:consumer STREAM_NAME DESTINATION_NAME EVENT_TYPE",
+        "gen:consumer STREAM_NAME DESTINATION_NAME SCHEMA_NAME",
         "Generates a new NATS Consumer configuration with boilerplate")
     end
   end

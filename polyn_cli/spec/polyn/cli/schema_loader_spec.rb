@@ -3,7 +3,7 @@
 require "spec_helper"
 
 RSpec.describe Polyn::Cli::SchemaLoader do
-  describe "#load_events" do
+  describe "#load_schemas" do
     include_context :tmp_dir
 
     let(:store_name) { "SCHEMA_LOADER_TEST_STORE" }
@@ -23,11 +23,11 @@ RSpec.describe Polyn::Cli::SchemaLoader do
 
     subject do
       described_class.new(thor,
-        store_name: store_name,
-        events_dir: tmp_dir)
+        store_name:  store_name,
+        schemas_dir: tmp_dir)
     end
 
-    it "it loads events to the store" do
+    it "it loads schemas to the store" do
       add_schema_file("app.widgets.v1", {
         "type"       => "object",
         "properties" => {
@@ -35,7 +35,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
         },
       })
 
-      subject.load_events
+      subject.load_schemas
 
       schema  = get_schema("app.widgets.v1")
       datadef = schema["definitions"]["datadef"]
@@ -47,7 +47,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
       })
     end
 
-    it "it loads events to the store from subdirectories" do
+    it "it loads schemas to the store from subdirectories" do
       add_schema_file("app.widgets.v1", {
         "type"       => "object",
         "properties" => {
@@ -55,7 +55,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
         },
       }, "foo-dir")
 
-      subject.load_events
+      subject.load_schemas
 
       schema  = get_schema("app.widgets.v1")
       datadef = schema["definitions"]["datadef"]
@@ -70,7 +70,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
     it "invalid json schema document raises" do
       add_schema_file("app.widgets.v1", "foo")
 
-      expect { subject.load_events }.to raise_error(Polyn::Cli::ValidationError)
+      expect { subject.load_schemas }.to raise_error(Polyn::Cli::ValidationError)
     end
 
     it "invalid file name raises" do
@@ -81,16 +81,16 @@ RSpec.describe Polyn::Cli::SchemaLoader do
         },
       })
 
-      expect { subject.load_events }.to raise_error(Polyn::Cli::Error)
+      expect { subject.load_schemas }.to raise_error(Polyn::Cli::Error)
     end
 
     it "non-json documents are ignored" do
       path = File.join(tmp_dir, "foo.png")
       File.write(path, "foo")
-      expect { subject.load_events }.to_not raise_error
+      expect { subject.load_schemas }.to_not raise_error
     end
 
-    it "it raises if two duplicate events exist" do
+    it "it raises if two duplicate schemas exist" do
       add_schema_file("app.widgets.v1", {
         "type"       => "object",
         "properties" => {
@@ -106,11 +106,11 @@ RSpec.describe Polyn::Cli::SchemaLoader do
       }, "bar-dir")
 
       expect do
-        subject.load_events
+        subject.load_schemas
       end.to raise_error(Polyn::Cli::ValidationError)
     end
 
-    it "it removes deleted events" do
+    it "it removes deleted schemas" do
       kv.put("app.widgets.v1", JSON.generate({
         "type"       => "object",
         "properties" => {
@@ -118,12 +118,12 @@ RSpec.describe Polyn::Cli::SchemaLoader do
         },
       }))
 
-      subject.load_events
+      subject.load_schemas
 
       expect { kv.get("app.widgets.v1") }.to raise_error(NATS::KeyValue::KeyDeletedError)
     end
 
-    it "ignores history of deleted events" do
+    it "ignores history of deleted schemas" do
       kv.put("app.widgets.v1", JSON.generate({
         "type"       => "object",
         "properties" => {
@@ -133,7 +133,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
 
       kv.delete("app.widgets.v1")
 
-      subject.load_events
+      subject.load_schemas
 
       expect { kv.get("app.widgets.v1") }.to raise_error(NATS::KeyValue::KeyDeletedError)
     end
