@@ -7,8 +7,8 @@ on:
       - 'polyn_elixir_client/**'
   pull_request:
     branches: [main]
-    # paths:
-    #   - 'polyn_elixir_client/**'
+    paths:
+      - 'polyn_elixir_client/**'
 
 permissions:
   contents: read
