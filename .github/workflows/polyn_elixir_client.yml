@@ -1,14 +1,14 @@
 name: Polyn Elixir Client
 
-# on:
-#   push:
-#     branches: [main]
-#     paths:
-#       - 'polyn_elixir_client/**'
-#   pull_request:
-#     branches: [main]
-#     paths:
-#       - 'polyn_elixir_client/**'
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'polyn_elixir_client/**'
+  pull_request:
+    branches: [main]
+    # paths:
+    #   - 'polyn_elixir_client/**'
 
 permissions:
   contents: read
