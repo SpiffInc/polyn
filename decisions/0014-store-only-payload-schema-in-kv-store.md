@@ -1,11 +1,11 @@
 ---
 status: accepted
 date: 2022-12-20
-deciders: Brandyn Bennett, Jarod Reid
+deciders: Brandyn Bennett
 consulted:
 informed:
 ---
-# Store Full Cloud Event Schema in KV Store
+# Store Only Payload Schema in Key Value Store
 
 ## Context and Problem Statement
 
