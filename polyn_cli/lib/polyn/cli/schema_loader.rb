@@ -21,7 +21,6 @@ module Polyn
         @client             = connect
         @store_name         = opts.fetch(:store_name, STORE_NAME)
         @bucket             = client.key_value(@store_name)
-        @cloud_event_schema = Polyn::Cli::CloudEvent.to_h.freeze
         @schemas_dir        = opts.fetch(:schemas_dir, File.join(Dir.pwd, "schemas"))
         @schemas            = {}
         @existing_schemas   = {}
@@ -47,7 +46,6 @@ module Polyn
         :schemas,
         :client,
         :bucket,
-        :cloud_event_schema,
         :schemas_dir,
         :store_name,
         :existing_schemas
@@ -72,11 +70,10 @@ module Polyn
 
         schema_files.each do |schema_file|
           thor.say "Loading 'schema #{schema_file}'"
-          data_schema = JSON.parse(File.read(schema_file))
+          schema      = JSON.parse(File.read(schema_file))
           schema_name = File.basename(schema_file, ".json")
-          validate_schema!(schema_name, data_schema)
+          validate_schema!(schema_name, schema)
           Polyn::Cli::Naming.validate_message_name!(schema_name)
-          schema      = compose_cloud_event(data_schema)
 
           schemas[schema_name] = schema
         end
@@ -112,14 +109,6 @@ module Polyn
         raise Polyn::Cli::ValidationError,
           "Invalid JSON Schema document for event #{schema_name}\n#{e.message}\n"\
           "#{JSON.pretty_generate(schema)}"
-      end
-
-      def compose_cloud_event(data_schema)
-        cloud_event_schema.merge({
-          "definitions" => cloud_event_schema["definitions"].merge({
-            "datadef" => data_schema,
-          }),
-        })
       end
 
       def load_existing_schemas

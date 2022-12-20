@@ -90,7 +90,7 @@ module Polyn
         schema = get_schema(type)
         return schema if schema.is_a?(Polyn::Errors::Error)
 
-        validate_schema(schema, event)
+        validate_schema(schema, event["data"])
       end
 
       def validate_schema(schema, event)

@@ -38,8 +38,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
       subject.load_schemas
 
       schema  = get_schema("app.widgets.v1")
-      datadef = schema["definitions"]["datadef"]
-      expect(datadef).to eq({
+      expect(schema).to eq({
         "type"       => "object",
         "properties" => {
           "name" => { "type" => "string" },
@@ -58,8 +57,7 @@ RSpec.describe Polyn::Cli::SchemaLoader do
       subject.load_schemas
 
       schema  = get_schema("app.widgets.v1")
-      datadef = schema["definitions"]["datadef"]
-      expect(datadef).to eq({
+      expect(schema).to eq({
         "type"       => "object",
         "properties" => {
           "name" => { "type" => "string" },

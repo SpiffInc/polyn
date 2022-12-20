@@ -11,15 +11,10 @@ RSpec.describe Polyn do
   let(:schema_store) do
     Polyn::SchemaStore.new(nats, name: store_name, schemas: {
       "calc.mult.v1" => JSON.generate({
-        "type" => "object",
-        "properties": {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
+        "type"       => "object",
+        "properties" => {
+          "a" => { "type" => "integer" },
+          "b" => { "type" => "integer" },
         },
       }),
     })

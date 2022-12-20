@@ -81,7 +81,7 @@ A Polyn client MUST add its message data to the `data` attribute of the CloudEve
 
 ## Message Schema
 
-Each message MUST be associated with a JSON Schema that is a CloudEvent JSON Schema document with the `data` section replaced with the schema specific to the message.
+Each message MUST be associated with a JSON Schema.
 
 ### Polyn Specific Fields
 
@@ -97,7 +97,7 @@ A `stream_config` field can be included to overrwrite the defaults for the NATS 
 
 ## Message Validation
 
-A Polyn client MUST support loading a [JSON Schema](https://json-schema.org/) document for each event. The Schema Repository SHOULD be a JetStream KeyValue Bucket called `POLYN_SCHEMAS`.
+A Polyn client MUST support loading a [JSON Schema](https://json-schema.org/) document for each message. The Schema Repository SHOULD be a JetStream KeyValue Bucket called `POLYN_SCHEMAS`. A Polyn client MUST validate that the entire message is a valid CloudEvent schema. It should also validate that the `data` property of the message conforms to a JSON Schema loaded from the KeyValue bucket.
 
 If the Schema Respository bucket does not exist Polyn MUST raise an exception that says:
 

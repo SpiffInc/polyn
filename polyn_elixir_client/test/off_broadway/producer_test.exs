@@ -28,15 +28,9 @@ defmodule OffBroadway.Polyn.ProducerTest do
            "company.created.v1" =>
              Jason.encode!(%{
                "type" => "object",
-               "required" => ["type"],
                "properties" => %{
-                 "data" => %{
-                   "type" => "object",
-                   "properties" => %{
-                     "name" => %{"type" => "string"},
-                     "element" => %{"type" => "string"}
-                   }
-                 }
+                 "name" => %{"type" => "string"},
+                 "element" => %{"type" => "string"}
                }
              })
          }
