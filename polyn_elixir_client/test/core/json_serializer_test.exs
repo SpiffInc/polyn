@@ -16,24 +16,16 @@ defmodule Polyn.Serializers.JSONTest do
          schemas: %{
            "foo.created.v1" =>
              Jason.encode!(%{
-               "type" => "object",
-               "properties" => %{"data" => %{"type" => "null"}}
+               "type" => "null"
              }),
            "user.xml.v1" =>
              Jason.encode!(%{
-               "type" => "object",
-               "properties" => %{"data" => %{"type" => "string"}}
+               "type" => "string"
              }),
            "user.created.v1" =>
              Jason.encode!(%{
                "type" => "object",
-               "properties" => %{
-                 "id" => %{"type" => "string", "minLength" => 1},
-                 "data" => %{
-                   "type" => "object",
-                   "properties" => %{"foo" => %{"type" => "string"}}
-                 }
-               }
+               "properties" => %{"foo" => %{"type" => "string"}}
              })
          }
        ]}
@@ -124,7 +116,7 @@ defmodule Polyn.Serializers.JSONTest do
         |> JSON.deserialize(store_name: @store_name)
 
       assert message =~ "Polyn event foo from test is not valid"
-      assert message =~ "Property: `#/data/foo` - Type mismatch. Expected String but got Integer."
+      assert message =~ "Property: `#/foo` - Type mismatch. Expected String but got Integer."
     end
 
     test "error if invalid type" do
@@ -289,7 +281,7 @@ defmodule Polyn.Serializers.JSONTest do
         end)
 
       assert message =~ "Polyn event abc from test is not valid"
-      assert message =~ "Property: `#/data` - Type mismatch. Expected Object but got Null."
+      assert message =~ "Property: `#` - Type mismatch. Expected Object but got Null."
     end
   end
 end

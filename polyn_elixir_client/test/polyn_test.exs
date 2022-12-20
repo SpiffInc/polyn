@@ -18,23 +18,19 @@ defmodule PolynTest do
          schemas: %{
            "pub.test.event.v1" =>
              Jason.encode!(%{
-               "type" => "object",
-               "properties" => %{"data" => %{"type" => "string"}}
+               "type" => "string"
              }),
            "reply.test.event.v1" =>
              Jason.encode!(%{
-               "type" => "object",
-               "properties" => %{"data" => %{"type" => "string"}}
+               "type" => "string"
              }),
            "request.test.request.v1" =>
              Jason.encode!(%{
-               "type" => "object",
-               "properties" => %{"data" => %{"type" => "string"}}
+               "type" => "string"
              }),
            "request.test.response.v1" =>
              Jason.encode!(%{
-               "type" => "object",
-               "properties" => %{"data" => %{"type" => "string"}}
+               "type" => "string"
              })
          }
        ]}

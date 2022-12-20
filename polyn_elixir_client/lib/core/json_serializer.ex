@@ -160,7 +160,7 @@ defmodule Polyn.Serializers.JSON do
   end
 
   defp validate_schema(schema, json) do
-    case ExJsonSchema.Validator.validate(schema, json) do
+    case ExJsonSchema.Validator.validate(schema, json["data"]) do
       :ok ->
         :ok
 
