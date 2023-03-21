@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by [ADR-0015](0015-polyn-focuses-on-message-validation.md)
 date: 2022-10-26
 deciders: Brandyn Bennett
 consulted:
