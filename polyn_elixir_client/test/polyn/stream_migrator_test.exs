@@ -8,6 +8,13 @@ defmodule Polyn.StreamMigratorTest do
   @conn_name :stream_migrator_test
   @moduletag with_gnat: @conn_name
 
+  setup do
+    # We make the same test module over and over again in a tmp_file so we can ignore the
+    # `redefining module MyStreamConfig (current version defined in memory)` warning
+    Code.compiler_options(ignore_module_conflict: true)
+    :ok
+  end
+
   test "makes a new stream", %{tmp_dir: tmp_dir} do
     Stream.delete(@conn_name, "MY_STREAM")
 
