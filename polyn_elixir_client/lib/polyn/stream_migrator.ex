@@ -5,9 +5,7 @@ defmodule Polyn.StreamMigrator do
 
   require Logger
 
-  alias Jetstream.API.Stream
-
-  @stream_name_used_with_different_config_code 10058
+  alias __MODULE__.Stream
 
   def run(conn, dir) do
     get_config_files(%{conn: conn, dir: dir})
@@ -58,18 +56,6 @@ defmodule Polyn.StreamMigrator do
   end
 
   defp execute_config(conn, {:stream, fields}) do
-    stream = struct!(Stream, fields)
-
-    case Stream.create(conn, stream) do
-      {:error, %{"err_code" => @stream_name_used_with_different_config_code}} ->
-        update_stream(conn, stream)
-
-      other ->
-        other
-    end
-  end
-
-  defp update_stream(conn, stream) do
-    Stream.update(conn, stream)
+    Stream.change(conn, fields)
   end
 end
