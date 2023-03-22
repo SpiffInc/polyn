@@ -1,4 +1,4 @@
-defmodule Polyn.StreamManager do
+defmodule Polyn.StreamMigrator do
   # Manages the creation and updating of streams and consumers that
   # an application owns
   @moduledoc false

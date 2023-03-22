@@ -1,11 +1,11 @@
-defmodule Polyn.StreamManagerTest do
+defmodule Polyn.StreamMigratorTest do
   use Polyn.ConnCase, async: true
 
-  alias Polyn.StreamManager
+  alias Polyn.StreamMigrator
   alias Jetstream.API.Stream
 
   @moduletag :tmp_dir
-  @conn_name :stream_manager_test
+  @conn_name :stream_migrator_test
   @moduletag with_gnat: @conn_name
 
   test "makes a new stream", %{tmp_dir: tmp_dir} do
@@ -21,7 +21,7 @@ defmodule Polyn.StreamManagerTest do
     end
     """)
 
-    StreamManager.run(@conn_name, tmp_dir)
+    StreamMigrator.run(@conn_name, tmp_dir)
 
     {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
       Stream.info(@conn_name, "MY_STREAM")
@@ -41,7 +41,7 @@ defmodule Polyn.StreamManagerTest do
     end
     """)
 
-    StreamManager.run(@conn_name, tmp_dir)
+    StreamMigrator.run(@conn_name, tmp_dir)
 
     {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
       Stream.info(@conn_name, "MY_STREAM")
@@ -61,7 +61,7 @@ defmodule Polyn.StreamManagerTest do
     end
     """)
 
-    StreamManager.run(@conn_name, tmp_dir)
+    StreamMigrator.run(@conn_name, tmp_dir)
 
     {:ok,
      %{
