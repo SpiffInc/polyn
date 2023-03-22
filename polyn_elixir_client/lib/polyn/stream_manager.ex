@@ -7,6 +7,8 @@ defmodule Polyn.StreamManager do
 
   alias Jetstream.API.Stream
 
+  @stream_name_used_with_different_config_code 10058
+
   def run(conn, dir) do
     get_config_files(%{conn: conn, dir: dir})
     |> compile_config_files()
@@ -57,6 +59,17 @@ defmodule Polyn.StreamManager do
 
   defp execute_config(conn, {:stream, fields}) do
     stream = struct!(Stream, fields)
-    Stream.create(conn, stream)
+
+    case Stream.create(conn, stream) do
+      {:error, %{"err_code" => @stream_name_used_with_different_config_code}} ->
+        update_stream(conn, stream)
+
+      other ->
+        other
+    end
+  end
+
+  defp update_stream(conn, stream) do
+    Stream.update(conn, stream)
   end
 end

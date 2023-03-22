@@ -26,4 +26,50 @@ defmodule Polyn.StreamManagerTest do
     {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
       Stream.info(@conn_name, "MY_STREAM")
   end
+
+  test "when stream exists already it's a noop", %{tmp_dir: tmp_dir} do
+    Stream.delete(@conn_name, "MY_STREAM")
+    Stream.create(@conn_name, %Stream{name: "MY_STREAM", subjects: ["my_subject"]})
+
+    File.write!(Path.join(tmp_dir, "my_stream.exs"), """
+    defmodule MyStreamConfig do
+      import Polyn.StreamConfig
+
+      def configure do
+        stream(name: "MY_STREAM", subjects: ["my_subject"])
+      end
+    end
+    """)
+
+    StreamManager.run(@conn_name, tmp_dir)
+
+    {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
+      Stream.info(@conn_name, "MY_STREAM")
+  end
+
+  test "when stream config changes it updates", %{tmp_dir: tmp_dir} do
+    Stream.delete(@conn_name, "MY_STREAM")
+    Stream.create(@conn_name, %Stream{name: "MY_STREAM", subjects: ["my_subject"]})
+
+    File.write!(Path.join(tmp_dir, "my_stream.exs"), """
+    defmodule MyStreamConfig do
+      import Polyn.StreamConfig
+
+      def configure do
+        stream(name: "MY_STREAM", subjects: ["my_subject"], description: "new interesting facts")
+      end
+    end
+    """)
+
+    StreamManager.run(@conn_name, tmp_dir)
+
+    {:ok,
+     %{
+       config: %{
+         name: "MY_STREAM",
+         subjects: ["my_subject"],
+         description: "new interesting facts"
+       }
+     }} = Stream.info(@conn_name, "MY_STREAM")
+  end
 end
