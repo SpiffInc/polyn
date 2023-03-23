@@ -6,17 +6,23 @@ defmodule Polyn.Migration do
   alias Polyn.Migration.Runner
 
   @doc """
-  Creates a new Stream for storing message
+  Creates a new Stream for storing messages. Options are what's available on
+  `Jetstream.API.Stream.t()`
+
+  ## Examples
+
+      iex>create_stream(name: "test_stream", subjects: ["test_subject"])
+      :ok
   """
   @spec create_stream(stream_options :: keyword()) :: :ok
-  def create_stream(options) when is_list(options) do
-    Enum.into(options, %{})
-    |> create_stream()
+  def create_stream(opts) when is_list(opts) do
+    command = {:create_stream, opts}
+    Runner.add_command(runner(), command)
   end
 
-  @spec create_stream(stream_options :: map()) :: :ok
-  def create_stream(opts) when is_map(opts) do
-    command = {:create_stream, opts}
+  @spec update_stream(stream_options :: keyword()) :: :ok
+  def update_stream(opts) when is_list(opts) do
+    command = {:update_stream, opts}
     Runner.add_command(runner(), command)
   end
 

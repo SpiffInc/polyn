@@ -8,7 +8,16 @@ defmodule Polyn.Migration.Command do
   @doc "Actually apply the change to the server"
   def execute({:create_stream, opts}) do
     stream = struct(Stream, opts)
-    Stream.create(Connection.name(), stream)
+
+    case Stream.create(Connection.name(), stream) do
+      {:error, reason} -> raise Polyn.Migration.Exception, inspect(reason)
+      success -> success
+    end
+  end
+
+  def execute({:update_stream, opts}) do
+    stream = struct(Stream, opts)
+    Stream.update(Connection.name(), stream) |> IO.inspect(label: "UPDATE")
   end
 
   def execute({_id, command}) do
