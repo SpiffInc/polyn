@@ -4,6 +4,7 @@ defmodule Polyn.Migration.MigratorTest do
   alias Polyn.Migration.Migrator
   alias Polyn.Connection
   alias Jetstream.API.{Stream, Consumer}
+  import ExUnit.CaptureLog
 
   @moduletag :tmp_dir
   @conn_name :migrator_test
@@ -20,9 +21,15 @@ defmodule Polyn.Migration.MigratorTest do
     Map.put(context, :migrations_dir, migrations_dir)
   end
 
-  test "local migrations ignore non .exs files", context do
+  test "migrations ignore non .exs files", context do
     File.write!(Path.join(context.migrations_dir, "foo.text"), "foo")
     assert run(context) == :ok
+  end
+
+  test "logs when no local migrations found", context do
+    assert capture_log(fn ->
+             run(context)
+           end) =~ "No migrations found at #{context.migrations_dir}"
   end
 
   describe "streams" do
@@ -47,23 +54,41 @@ defmodule Polyn.Migration.MigratorTest do
       Stream.delete(Connection.name(), "test_stream")
     end
 
-    test "makes a new stream", %{tmp_dir: tmp_dir} do
-      Stream.delete(@conn_name, "MY_STREAM")
+    test "migrations in correct order", context do
+      add_migration_file(context.migrations_dir, "222_create_stream.exs", """
+      defmodule ExampleSecondStream do
+        import Polyn.Migration
 
-      File.write!(Path.join(tmp_dir, "1_create_my_stream.exs"), """
-      defmodule MyStreamConfig do
-        import Polyn.StreamConfig
-
-        def configure do
-          stream(name: "MY_STREAM", subjects: ["my_subject"])
+        def change do
+          create_stream(name: "second_stream", subjects: ["second_subject"])
         end
       end
       """)
 
-      Migrator.run(migrations_dir: tmp_dir)
+      add_migration_file(context.migrations_dir, "111_create_other_stream.exs", """
+      defmodule ExampleFirstStream do
+        import Polyn.Migration
 
-      assert {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
-               Stream.info(@conn_name, "MY_STREAM")
+        def change do
+          create_stream(name: "first_stream", subjects: ["first_subject"])
+        end
+      end
+      """)
+
+      assert :ok = run(context)
+
+      # assert {:ok, %{data: first_migration}} =
+      #          Stream.get_message(Connection.name(), @migration_stream, %{
+      #            seq: 1
+      #          })
+
+      # assert {:ok, %{data: second_migration}} =
+      #          Stream.get_message(Connection.name(), @migration_stream, %{
+      #            seq: 2
+      #          })
+
+      # assert first_migration == "111"
+      # assert second_migration == "222"
     end
 
     test "when stream exists already it's a noop", %{tmp_dir: tmp_dir} do
