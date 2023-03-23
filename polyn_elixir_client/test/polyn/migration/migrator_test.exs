@@ -2,20 +2,46 @@ defmodule Polyn.Migration.MigratorTest do
   use Polyn.ConnCase, async: true
 
   alias Polyn.Migration.Migrator
+  alias Polyn.Connection
   alias Jetstream.API.{Stream, Consumer}
 
   @moduletag :tmp_dir
   @conn_name :migrator_test
   @moduletag with_gnat: @conn_name
 
-  setup do
+  setup context do
+    migrations_dir = Path.join(context.tmp_dir, "migrations")
+    File.mkdir!(migrations_dir)
+
     # We make the same test module over and over again in a tmp_file so we can ignore the
     # `redefining module MyMigration (current version defined in memory)` warning
     Code.compiler_options(ignore_module_conflict: true)
-    :ok
+
+    Map.put(context, :migrations_dir, migrations_dir)
   end
 
   describe "streams" do
+    test "adds a migration to create a new stream", context do
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "test_stream", subjects: ["test_subject"])
+        end
+      end
+      """)
+
+      run(context)
+
+      # assert {:ok, %{data: data}} = Polyn.MigrationStream.get_last_migration()
+      # assert data == "1234"
+
+      assert {:ok, info} = Stream.info(Connection.name(), "test_stream")
+      assert info.config.name == "test_stream"
+      Stream.delete(Connection.name(), "test_stream")
+    end
+
     test "makes a new stream", %{tmp_dir: tmp_dir} do
       Stream.delete(@conn_name, "MY_STREAM")
 
@@ -141,5 +167,13 @@ defmodule Polyn.Migration.MigratorTest do
       assert {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
                Stream.info(@conn_name, "MY_STREAM")
     end
+  end
+
+  defp add_migration_file(dir, file_name, contents) do
+    File.write!(Path.join(dir, file_name), contents)
+  end
+
+  defp run(context) do
+    Migrator.run(migrations_dir: context.migrations_dir)
   end
 end

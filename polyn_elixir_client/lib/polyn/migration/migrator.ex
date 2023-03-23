@@ -5,6 +5,7 @@ defmodule Polyn.Migration.Migrator do
 
   require Logger
 
+  alias Polyn.Migration.Runner
 
   @typedoc """
   * `:migrations_dir` - Location of migration files
@@ -14,14 +15,13 @@ defmodule Polyn.Migration.Migrator do
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
   """
   @type t :: %__MODULE__{
-    migrations_dir: binary(),
-    running_migration_id: non_neg_integer() | nil,
-    migration_stream_info: Stream.info() | nil,
-    migration_files: list(binary()),
-    migration_modules: list({integer(), module()}),
-    commands: list({integer(), tuple()}),
-    already_run_migrations: list(binary())
-  }
+          migrations_dir: binary(),
+          running_migration_id: non_neg_integer() | nil,
+          migration_files: list(binary()),
+          migration_modules: list({integer(), module()}),
+          commands: list({integer(), tuple()}),
+          already_run_migrations: list(binary())
+        }
 
   # Holds the state of the migration as we move through migration steps
   defstruct [
@@ -34,8 +34,7 @@ defmodule Polyn.Migration.Migrator do
   ]
 
   def new(opts \\ []) do
-    opts =
-      |> Keyword.put_new(:migrations_dir, migrations_dir())
+    opts = Keyword.put_new(opts, :migrations_dir, migrations_dir())
 
     struct!(__MODULE__, opts)
   end
@@ -116,7 +115,7 @@ defmodule Polyn.Migration.Migrator do
     # Gather commmands by migration file so they are executed in order
     Enum.group_by(commands, &elem(&1, 0))
     |> Enum.sort_by(fn {key, _val} -> key end)
-    |> Enum.each(fn {id, commands} ->
+    |> Enum.each(fn {_id, commands} ->
       Enum.each(commands, &Polyn.Migration.Command.execute/1)
       # We only want to put the migration id into the stream once we know
       # it was successfully executed
