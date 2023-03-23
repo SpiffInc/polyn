@@ -20,6 +20,11 @@ defmodule Polyn.Migration.MigratorTest do
     Map.put(context, :migrations_dir, migrations_dir)
   end
 
+  test "local migrations ignore non .exs files", context do
+    File.write!(Path.join(context.migrations_dir, "foo.text"), "foo")
+    assert run(context) == :ok
+  end
+
   describe "streams" do
     test "adds a migration to create a new stream", context do
       add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
