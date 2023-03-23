@@ -1,4 +1,4 @@
-defmodule Polyn.StreamMigrator.Stream do
+defmodule Polyn.Migrator.Stream do
   @moduledoc false
 
   alias Jetstream.API.Stream

@@ -1,4 +1,4 @@
-defmodule Polyn.StreamMigrator.Exception do
+defmodule Polyn.Migrator.Exception do
   @moduledoc """
   Exception when changing the configuration of streams and consumers
   """
