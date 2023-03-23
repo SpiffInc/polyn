@@ -50,12 +50,26 @@ define that domain like this:
 config :polyn, :domain, "app.spiff"
 ```
 
-### Event Source Root
+### Message Source Root
 
-The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#source-1) specifies that every event MUST have a `source` attribute and recommends it be an absolute [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier). Your application must configure the `source_root` to use for events produced at the application level. Each event producer can include its own `source` to append to the `source_root` if it makes sense.
+The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#source-1) specifies that every event MUST have a `source` attribute and recommends it be an absolute [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier). Your application must configure the `source_root` to use for messages produced at the application level. Each message producer can include its own `source` to append to the `source_root` if it makes sense.
 
 ```elixir
 config :polyn, :source_root, "orders.payments"
+```
+
+### NATS Connection
+
+You will need to provide the connection settings for your NATS connection. This will differ in-between environments. More settings options can be seen here: `https://hexdocs.pm/gnat/Gnat.ConnectionSupervisor.html#content`
+
+```elixir
+config :polyn, :nats, %{
+  name: :gnat,
+  connection_settings: [
+    %{host: "10.0.0.100", port: 4222},
+    %{host: "10.0.0.101", port: 4222},
+  ]
+}
 ```
 
 ## Schema Store
@@ -70,6 +84,28 @@ In order for `Polyn` to access schemas for validation you'll need a running `Pol
   opts = [strategy: :one_for_one, name: MySupervisor]
   Supervisor.start_link(children, opts)
 ```
+
+## Server Migrations
+
+To create a migration you use the mix task `mix polyn.gen.migration <name>`. If you wanted to create a new stream for user messages you could do the following:
+
+```bash
+mix polyn.gen.migration create_user_stream
+```
+
+This would add a new migration to your codebase at `priv/polyn/migrations/<timestamp>_create_user_stream.exs`. The TIMESTAMP is a unique number that identifies the migration. It is usually the timestamp of when the migration was created. The NAME must also be unique and it quickly identifies what the migration does. Inside the generated file you would see a module like this:
+
+```elixir
+defmodule Polyn.Migrations.CreateUserStream do
+  import Polyn.Migration
+
+  def change do
+  end
+end
+```
+
+Inside the `change` function you can use the functions available in `Polyn.Migration` to update the NATS server. You can then run `mix polyn.migrate` to apply your changes.
+
 
 ## Usage
 
