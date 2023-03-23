@@ -97,7 +97,6 @@ defmodule Polyn.Migration.Migrator do
     String.to_integer(id)
   end
 
-
   defp get_migration_commands(state) do
     {:ok, pid} = Runner.start_link(state)
     Process.put(:polyn_migration_runner, pid)
@@ -109,6 +108,20 @@ defmodule Polyn.Migration.Migrator do
 
     state = Runner.get_state(pid)
     Runner.stop(pid)
+
+    state
+  end
+
+  defp execute_commands(%{commands: commands} = state) do
+    # Gather commmands by migration file so they are executed in order
+    Enum.group_by(commands, &elem(&1, 0))
+    |> Enum.sort_by(fn {key, _val} -> key end)
+    |> Enum.each(fn {id, commands} ->
+      Enum.each(commands, &Polyn.Migration.Command.execute/1)
+      # We only want to put the migration id into the stream once we know
+      # it was successfully executed
+      # MigrationStream.add_migration(id)
+    end)
 
     state
   end
