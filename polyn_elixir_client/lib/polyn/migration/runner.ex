@@ -6,6 +6,7 @@ defmodule Polyn.Migration.Runner do
   @moduledoc false
   use Agent
 
+  @spec start_link(Polyn.Migration.Migrator.t()) :: Agent.on_start()
   def start_link(state) do
     Agent.start_link(fn -> state end)
   end
