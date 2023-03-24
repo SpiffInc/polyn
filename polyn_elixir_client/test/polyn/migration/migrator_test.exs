@@ -9,8 +9,11 @@ defmodule Polyn.Migration.MigratorTest do
   @moduletag :tmp_dir
   @conn_name :migrator_test
   @moduletag with_gnat: @conn_name
+  @common_stream_name "test_stream"
 
   setup context do
+    Stream.delete(Connection.name(), @common_stream_name)
+
     migrations_dir = Path.join(context.tmp_dir, "migrations")
     File.mkdir!(migrations_dir)
 
@@ -39,7 +42,7 @@ defmodule Polyn.Migration.MigratorTest do
         import Polyn.Migration
 
         def change do
-          create_stream(name: "test_stream", subjects: ["test_subject"])
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
         end
       end
       """)
@@ -49,9 +52,8 @@ defmodule Polyn.Migration.MigratorTest do
       # assert {:ok, %{data: data}} = Polyn.MigrationStream.get_last_migration()
       # assert data == "1234"
 
-      assert {:ok, info} = Stream.info(Connection.name(), "test_stream")
-      assert info.config.name == "test_stream"
-      Stream.delete(Connection.name(), "test_stream")
+      assert {:ok, info} = Stream.info(Connection.name(), @common_stream_name)
+      assert info.config.name == @common_stream_name
     end
 
     test "raises if bad config", context do
@@ -60,7 +62,7 @@ defmodule Polyn.Migration.MigratorTest do
         import Polyn.Migration
 
         def change do
-          create_stream(name: "test_stream", subjects: nil)
+          create_stream(name: "#{@common_stream_name}", subjects: nil)
         end
       end
       """)
@@ -70,13 +72,51 @@ defmodule Polyn.Migration.MigratorTest do
       end)
     end
 
-    test "migrations in correct order", context do
-      add_migration_file(context.migrations_dir, "222_create_stream.exs", """
+    test "adds a migration to update a stream", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      add_migration_file(context.migrations_dir, "1234_update_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          update_stream(name: "#{@common_stream_name}", description: "my test stream")
+        end
+      end
+      """)
+
+      run(context)
+
+      assert {:ok, info} = Stream.info(Connection.name(), @common_stream_name)
+      assert info.config.description == "my test stream"
+    end
+
+    test "update raises if stream does not exist", context do
+      add_migration_file(context.migrations_dir, "1234_update_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          update_stream(name: "#{@common_stream_name}", description: "my test stream")
+        end
+      end
+      """)
+
+      assert_raise(Polyn.Migration.Exception, fn ->
+        run(context)
+      end)
+    end
+
+    test "migrations happen in correct order", context do
+      add_migration_file(context.migrations_dir, "222_update_stream.exs", """
       defmodule ExampleSecondStream do
         import Polyn.Migration
 
         def change do
-          create_stream(name: "second_stream", subjects: ["second_subject"])
+          update_stream(name: "#{@common_stream_name}", description: "my test stream")
         end
       end
       """)
@@ -86,48 +126,15 @@ defmodule Polyn.Migration.MigratorTest do
         import Polyn.Migration
 
         def change do
-          create_stream(name: "first_stream", subjects: ["first_subject"])
+          create_stream(name: "#{@common_stream_name}", subjects: ["first_subject"])
         end
       end
       """)
 
       assert :ok = run(context)
 
-      # assert {:ok, %{data: first_migration}} =
-      #          Stream.get_message(Connection.name(), @migration_stream, %{
-      #            seq: 1
-      #          })
-
-      # assert {:ok, %{data: second_migration}} =
-      #          Stream.get_message(Connection.name(), @migration_stream, %{
-      #            seq: 2
-      #          })
-
-      # assert first_migration == "111"
-      # assert second_migration == "222"
-    end
-
-    test "adds a migration to update a stream", context do
-      Stream.create(Connection.name(), %Stream{name: "test_stream", subjects: ["test_subject"]})
-
-      add_migration_file(context.migrations_dir, "1234_update_stream.exs", """
-      defmodule ExampleCreateStream do
-        import Polyn.Migration
-
-        def change do
-          update_stream(name: "test_stream", description: "my test stream")
-        end
-      end
-      """)
-
-      run(context)
-
-      # assert {:ok, %{data: data}} = Polyn.MigrationStream.get_last_migration()
-      # assert data == "1234"
-
-      assert {:ok, info} = Stream.info(Connection.name(), "test_stream")
+      assert {:ok, info} = Stream.info(Connection.name(), @common_stream_name)
       assert info.config.description == "my test stream"
-      Stream.delete(Connection.name(), "test_stream")
     end
 
     # test "when stream exists already it's a noop", %{tmp_dir: tmp_dir} do
