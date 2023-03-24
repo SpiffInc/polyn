@@ -5,8 +5,8 @@ defmodule Polyn.Migration.Migrator do
 
   require Logger
 
+  alias Polyn.Migration
   alias Polyn.Migration.Runner
-  alias Polyn.Connection
 
   @typedoc """
   * `:migrations_dir` - Location of migration files
@@ -37,8 +37,6 @@ defmodule Polyn.Migration.Migrator do
     already_run_migrations: []
   ]
 
-  @migration_bucket "POLYN_MIGRATIONS"
-
   def new(opts \\ []) do
     opts = Keyword.put_new(opts, :migrations_dir, migrations_dir())
 
@@ -56,6 +54,7 @@ defmodule Polyn.Migration.Migrator do
     new(opts)
     |> get_migration_bucket_info()
     |> create_migration_bucket()
+    |> get_already_run_migrations()
     |> get_migration_files()
     |> compile_migration_files()
     |> get_migration_commands()
@@ -65,20 +64,25 @@ defmodule Polyn.Migration.Migrator do
   end
 
   defp get_migration_bucket_info(state) do
-    case Jetstream.API.Stream.info(Connection.name(), "KV_#{@migration_bucket}") do
+    case Migration.Bucket.info() do
       {:ok, info} -> Map.put(state, :migration_bucket_info, info)
       _ -> state
     end
   end
 
   defp create_migration_bucket(%{migration_bucket_info: nil} = state) do
-    case Jetstream.API.KV.create_bucket(Connection.name(), @migration_bucket) do
+    case Migration.Bucket.create() do
       {:ok, info} -> Map.put(state, :migration_bucket_info, info)
       {:error, reason} -> raise Polyn.Migration.Exception, inspect(reason)
     end
   end
 
   defp create_migration_bucket(state), do: state
+
+  defp get_already_run_migrations(state) do
+    migrations = Migration.Bucket.already_run_migrations()
+    Map.put(state, :already_run_migrations, migrations)
+  end
 
   defp get_migration_files(%{migrations_dir: migrations_dir} = state) do
     files =
@@ -90,10 +94,11 @@ defmodule Polyn.Migration.Migrator do
         {:ok, files} ->
           files
           |> Enum.filter(&is_elixir_script?/1)
+          |> filter_already_ran(state)
           |> Enum.sort_by(&extract_migration_id/1)
 
-        {:error, _reason} ->
-          Logger.info("No migrations found at #{migrations_dir}")
+        {:error, reason} ->
+          Logger.info("No migrations found at #{migrations_dir}. #{inspect(reason)}")
           []
       end
 
@@ -102,6 +107,13 @@ defmodule Polyn.Migration.Migrator do
 
   defp is_elixir_script?(file_name) do
     String.ends_with?(file_name, ".exs")
+  end
+
+  defp filter_already_ran(files, %{already_run_migrations: already_run_migrations}) do
+    Enum.reject(files, fn file ->
+      id = extract_migration_id(file)
+      Enum.member?(already_run_migrations, id)
+    end)
   end
 
   defp compile_migration_files(%{migration_files: files, migrations_dir: migrations_dir} = state) do
@@ -117,7 +129,7 @@ defmodule Polyn.Migration.Migrator do
 
   defp extract_migration_id(file_name) do
     [id | _] = String.split(file_name, "_")
-    String.to_integer(id)
+    id
   end
 
   defp get_migration_commands(state) do

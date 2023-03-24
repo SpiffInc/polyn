@@ -1,9 +1,10 @@
 defmodule Polyn.Migration.MigratorTest do
   use Polyn.ConnCase, async: true
 
+  alias Polyn.Migration
   alias Polyn.Migration.Migrator
   alias Polyn.Connection
-  alias Jetstream.API.{Stream, Consumer}
+  alias Jetstream.API.Stream
   import ExUnit.CaptureLog
 
   @moduletag :tmp_dir
@@ -13,6 +14,7 @@ defmodule Polyn.Migration.MigratorTest do
   @migration_bucket "POLYN_MIGRATIONS"
 
   setup context do
+    Migration.Bucket.delete()
     Stream.delete(Connection.name(), @common_stream_name)
 
     migrations_dir = Path.join(context.tmp_dir, "migrations")
@@ -39,8 +41,7 @@ defmodule Polyn.Migration.MigratorTest do
   test "creates migration bucket if there is none", context do
     assert run(context) == :ok
 
-    assert {:ok, %{config: %{name: "KV_#{@migration_bucket}"}}} =
-             Jetstream.API.Stream.info(Connection.name(), "KV_#{@migration_bucket}")
+    assert {:ok, %{config: %{name: "KV_#{@migration_bucket}"}}} = Migration.Bucket.info()
   end
 
   describe "streams" do
@@ -78,6 +79,25 @@ defmodule Polyn.Migration.MigratorTest do
       assert_raise(Polyn.Migration.Exception, fn ->
         run(context)
       end)
+    end
+
+    test "does not run already run migrations", context do
+      Migration.Bucket.create()
+      Migration.Bucket.add_migration("1234")
+
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
+        end
+      end
+      """)
+
+      run(context)
+
+      assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
     end
 
     test "adds a migration to update a stream", context do
