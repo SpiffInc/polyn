@@ -58,11 +58,24 @@ defmodule Polyn.Migration.MigratorTest do
 
       run(context)
 
-      # assert {:ok, %{data: data}} = Polyn.MigrationStream.get_last_migration()
-      # assert data == "1234"
-
       assert {:ok, info} = Stream.info(Connection.name(), @common_stream_name)
       assert info.config.name == @common_stream_name
+    end
+
+    test "adds run migrations to kv bucket", context do
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
+        end
+      end
+      """)
+
+      run(context)
+
+      assert ["1234"] == Migration.Bucket.already_run_migrations()
     end
 
     test "raises if bad config", context do
