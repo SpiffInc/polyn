@@ -69,6 +69,7 @@ defmodule Polyn.Migration.MigratorTest do
 
         def change do
           create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
+          create_stream(name: "other_stream", subjects: ["other_subject"])
         end
       end
       """)
@@ -76,6 +77,7 @@ defmodule Polyn.Migration.MigratorTest do
       run(context)
 
       assert ["1234"] == Migration.Bucket.already_run_migrations()
+      Jetstream.API.Stream.delete(Connection.name(), "other_stream")
     end
 
     test "raises if bad config", context do
@@ -189,6 +191,23 @@ defmodule Polyn.Migration.MigratorTest do
         import Polyn.Migration
 
         def change do
+          delete_stream("#{@common_stream_name}")
+        end
+      end
+      """)
+
+      run(context)
+
+      assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
+    end
+
+    test "multiple commands in same migration are in correct order", context do
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
           delete_stream("#{@common_stream_name}")
         end
       end
