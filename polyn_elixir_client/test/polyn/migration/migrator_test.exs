@@ -1,5 +1,5 @@
 defmodule Polyn.Migration.MigratorTest do
-  use Polyn.ConnCase, async: true
+  use ExUnit.Case, async: true
 
   alias Polyn.Migration
   alias Polyn.Migration.Migrator
@@ -8,8 +8,6 @@ defmodule Polyn.Migration.MigratorTest do
   import ExUnit.CaptureLog
 
   @moduletag :tmp_dir
-  @conn_name :migrator_test
-  @moduletag with_gnat: @conn_name
   @common_stream_name "test_stream"
   @migration_bucket "POLYN_MIGRATIONS"
 
