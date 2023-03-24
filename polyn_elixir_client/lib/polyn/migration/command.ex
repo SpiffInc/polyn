@@ -24,6 +24,13 @@ defmodule Polyn.Migration.Command do
     end
   end
 
+  def execute({:delete_stream, stream_name}) do
+    case Stream.delete(Connection.name(), stream_name) do
+      {:error, reason} -> raise Polyn.Migration.Exception, inspect(reason)
+      success -> success
+    end
+  end
+
   def execute({_id, command}) do
     execute(command)
   end

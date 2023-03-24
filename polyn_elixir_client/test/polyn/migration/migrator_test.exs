@@ -121,7 +121,7 @@ defmodule Polyn.Migration.MigratorTest do
       end
       """)
 
-      add_migration_file(context.migrations_dir, "111_create_other_stream.exs", """
+      add_migration_file(context.migrations_dir, "111_create_stream.exs", """
       defmodule ExampleFirstStream do
         import Polyn.Migration
 
@@ -137,113 +137,27 @@ defmodule Polyn.Migration.MigratorTest do
       assert info.config.description == "my test stream"
     end
 
-    # test "when stream exists already it's a noop", %{tmp_dir: tmp_dir} do
-    #   Stream.delete(@conn_name, "MY_STREAM")
-    #   Stream.create(@conn_name, %Stream{name: "MY_STREAM", subjects: ["my_subject"]})
+    test "adds a migration to delete a stream", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
 
-    #   File.write!(Path.join(tmp_dir, "my_stream.exs"), """
-    #   defmodule MyStreamConfig do
-    #     import Polyn.StreamConfig
+      add_migration_file(context.migrations_dir, "1234_delete_stream.exs", """
+      defmodule ExampleDeleteStream do
+        import Polyn.Migration
 
-    #     def configure do
-    #       stream(name: "MY_STREAM", subjects: ["my_subject"])
-    #     end
-    #   end
-    #   """)
+        def change do
+          delete_stream("#{@common_stream_name}")
+        end
+      end
+      """)
 
-    #   Migrator.run(@conn_name, tmp_dir)
+      run(context)
 
-    #   assert {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
-    #            Stream.info(@conn_name, "MY_STREAM")
-    # end
-
-    #   test "when stream config changes it updates", %{tmp_dir: tmp_dir} do
-    #     Stream.delete(@conn_name, "MY_STREAM")
-    #     Stream.create(@conn_name, %Stream{name: "MY_STREAM", subjects: ["my_subject"]})
-
-    #     File.write!(Path.join(tmp_dir, "my_stream.exs"), """
-    #     defmodule MyStreamConfig do
-    #       import Polyn.StreamConfig
-
-    #       def configure do
-    #         stream(name: "MY_STREAM", subjects: ["my_subject"], description: "new interesting facts")
-    #       end
-    #     end
-    #     """)
-
-    #     Migrator.run(@conn_name, tmp_dir)
-
-    #     assert {:ok,
-    #             %{
-    #               config: %{
-    #                 name: "MY_STREAM",
-    #                 subjects: ["my_subject"],
-    #                 description: "new interesting facts"
-    #               }
-    #             }} = Stream.info(@conn_name, "MY_STREAM")
-    #   end
-
-    #   test "raises if new stream config has issues", %{tmp_dir: tmp_dir} do
-    #     Stream.delete(@conn_name, "MY_STREAM")
-
-    #     File.write!(Path.join(tmp_dir, "my_stream.exs"), """
-    #     defmodule MyStreamConfig do
-    #       import Polyn.StreamConfig
-
-    #       def configure do
-    #         stream(name: nil, subjects: nil)
-    #       end
-    #     end
-    #     """)
-
-    #     assert_raise(Polyn.Migrator.Exception, fn ->
-    #       Migrator.run(@conn_name, tmp_dir)
-    #     end)
-    #   end
-
-    #   test "raises if updated stream config has issues", %{tmp_dir: tmp_dir} do
-    #     Stream.delete(@conn_name, "MY_STREAM")
-
-    #     Stream.create(@conn_name, %Stream{name: "FOO", subjects: ["FOO"]})
-
-    #     File.write!(Path.join(tmp_dir, "my_stream.exs"), """
-    #     defmodule MyStreamConfig do
-    #       import Polyn.StreamConfig
-
-    #       def configure do
-    #         stream(name: "FOO", subjects: nil)
-    #       end
-    #     end
-    #     """)
-
-    #     assert_raise(Polyn.Migrator.Exception, fn ->
-    #       Migrator.run(@conn_name, tmp_dir)
-    #     end)
-    #   end
+      assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
+    end
   end
-
-  # describe "consumers" do
-  #   test "makes a new consumer", %{tmp_dir: tmp_dir} do
-  #     Stream.delete(@conn_name, "MY_STREAM")
-  #     Consumer.delete(@conn_name, "MY_STREAM", "my_consumer")
-
-  #     File.write!(Path.join(tmp_dir, "my_stream.exs"), """
-  #     defmodule MyStreamConfig do
-  #       import Polyn.StreamConfig
-
-  #       def configure do
-  #         stream(name: "MY_STREAM", subjects: ["my_subject"])
-  #         consumer(stream_name: "MY_STREAM", durable_name: "my_consumer")
-  #       end
-  #     end
-  #     """)
-
-  #     Migrator.run(@conn_name, tmp_dir)
-
-  #     assert {:ok, %{config: %{name: "MY_STREAM", subjects: ["my_subject"]}}} =
-  #              Stream.info(@conn_name, "MY_STREAM")
-  #   end
-  # end
 
   defp add_migration_file(dir, file_name, contents) do
     File.write!(Path.join(dir, file_name), contents)
