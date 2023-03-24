@@ -6,10 +6,12 @@ defmodule Polyn.Migration.Migrator do
   require Logger
 
   alias Polyn.Migration.Runner
+  alias Polyn.Connection
 
   @typedoc """
   * `:migrations_dir` - Location of migration files
   * `:running_migration_id` - The timestamp/id of the migration file being run. Taken from the beginning of the file name
+  * `:migration_bucket_info` - The Stream info for the migration KV bucket
   * `:migration_files` - The file names of migration files
   * `:migration_modules` - A list of tuples with the migration id and module code
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
@@ -17,6 +19,7 @@ defmodule Polyn.Migration.Migrator do
   @type t :: %__MODULE__{
           migrations_dir: binary(),
           running_migration_id: non_neg_integer() | nil,
+          migration_bucket_info: Jetstream.API.Stream.info() | nil,
           migration_files: list(binary()),
           migration_modules: list({integer(), module()}),
           commands: list({integer(), tuple()}),
@@ -27,11 +30,14 @@ defmodule Polyn.Migration.Migrator do
   defstruct [
     :running_migration_id,
     :migrations_dir,
+    :migration_bucket_info,
     migration_files: [],
     migration_modules: [],
     commands: [],
     already_run_migrations: []
   ]
+
+  @migration_bucket "POLYN_MIGRATIONS"
 
   def new(opts \\ []) do
     opts = Keyword.put_new(opts, :migrations_dir, migrations_dir())
@@ -48,6 +54,8 @@ defmodule Polyn.Migration.Migrator do
 
   def run(opts \\ []) do
     new(opts)
+    |> get_migration_bucket_info()
+    |> create_migration_bucket()
     |> get_migration_files()
     |> compile_migration_files()
     |> get_migration_commands()
@@ -55,6 +63,22 @@ defmodule Polyn.Migration.Migrator do
 
     :ok
   end
+
+  defp get_migration_bucket_info(state) do
+    case Jetstream.API.Stream.info(Connection.name(), "KV_#{@migration_bucket}") do
+      {:ok, info} -> Map.put(state, :migration_bucket_info, info)
+      _ -> state
+    end
+  end
+
+  defp create_migration_bucket(%{migration_bucket_info: nil} = state) do
+    case Jetstream.API.KV.create_bucket(Connection.name(), @migration_bucket) do
+      {:ok, info} -> Map.put(state, :migration_bucket_info, info)
+      {:error, reason} -> raise Polyn.Migration.Exception, inspect(reason)
+    end
+  end
+
+  defp create_migration_bucket(state), do: state
 
   defp get_migration_files(%{migrations_dir: migrations_dir} = state) do
     files =

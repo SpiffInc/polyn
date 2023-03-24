@@ -10,6 +10,7 @@ defmodule Polyn.Migration.MigratorTest do
   @conn_name :migrator_test
   @moduletag with_gnat: @conn_name
   @common_stream_name "test_stream"
+  @migration_bucket "POLYN_MIGRATIONS"
 
   setup context do
     Stream.delete(Connection.name(), @common_stream_name)
@@ -33,6 +34,13 @@ defmodule Polyn.Migration.MigratorTest do
     assert capture_log(fn ->
              run(context)
            end) =~ "No migrations found at #{context.migrations_dir}"
+  end
+
+  test "creates migration bucket if there is none", context do
+    assert run(context) == :ok
+
+    assert {:ok, %{config: %{name: "KV_#{@migration_bucket}"}}} =
+             Jetstream.API.Stream.info(Connection.name(), "KV_#{@migration_bucket}")
   end
 
   describe "streams" do
