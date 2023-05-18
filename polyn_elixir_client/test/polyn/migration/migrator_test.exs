@@ -4,11 +4,12 @@ defmodule Polyn.Migration.MigratorTest do
   alias Polyn.Migration
   alias Polyn.Migration.Migrator
   alias Polyn.Connection
-  alias Jetstream.API.Stream
+  alias Jetstream.API.{Stream, Consumer}
   import ExUnit.CaptureLog
 
   @moduletag :tmp_dir
   @common_stream_name "test_stream"
+  @common_consumer_name "test_consumer"
   @migration_bucket "POLYN_MIGRATIONS"
 
   setup context do
@@ -220,6 +221,34 @@ defmodule Polyn.Migration.MigratorTest do
       run(context)
 
       assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
+    end
+  end
+
+  describe "consumers" do
+    test "adds a migration to create a new consumer", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      add_migration_file(context.migrations_dir, "1234_create_consumer.exs", """
+      defmodule ExampleCreateConsumer do
+        import Polyn.Migration
+
+        def change do
+          create_consumer(
+            durable_name: "#{@common_consumer_name}",
+            stream_name: "#{@common_stream_name}")
+        end
+      end
+      """)
+
+      run(context)
+
+      assert {:ok, info} =
+               Consumer.info(Connection.name(), @common_stream_name, @common_consumer_name)
+
+      assert info.config.durable_name == @common_consumer_name
     end
   end
 

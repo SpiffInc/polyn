@@ -39,6 +39,18 @@ defmodule Polyn.Migration.Command do
     end
   end
 
+  def execute({id, :create_consumer, opts}, migrator_state) do
+    consumer = struct(Jetstream.API.Consumer, opts)
+
+    case Jetstream.API.Consumer.create(Connection.name(), consumer) do
+      {:error, reason} ->
+        raise_migration_exception(id, migrator_state, reason)
+
+      success ->
+        success
+    end
+  end
+
   def execute(command, _migrator_state) do
     raise Polyn.Migration.Exception,
           "Command #{inspect(command)} not recognized"

@@ -47,6 +47,20 @@ defmodule Polyn.Migration do
     Runner.add_command(runner(), :delete_stream, stream_name)
   end
 
+  @doc """
+  Creates a new Consumer for a stream. Options are what's available on
+  `Jetstream.API.Consumer.t()`
+
+  ## Examples
+
+      iex>create_consumer(durable_name: "test_consumer", stream_name: "test_stream")
+      :ok
+  """
+  @spec create_consumer(consumer_options :: keyword()) :: :ok
+  def create_consumer(opts) when is_list(opts) do
+    Runner.add_command(runner(), :create_consumer, opts)
+  end
+
   defp runner do
     Process.get(:polyn_migration_runner)
   end
