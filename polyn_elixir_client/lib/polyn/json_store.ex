@@ -1,6 +1,7 @@
 defmodule Polyn.JSONStore do
-  # A process for loading and accessing key value data from the NATS server.
-  @moduledoc false
+  @moduledoc """
+  A process for loading and accessing key value data from the NATS server.
+  """
 
   use GenServer
 
