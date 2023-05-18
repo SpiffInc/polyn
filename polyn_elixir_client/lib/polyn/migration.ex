@@ -49,7 +49,9 @@ defmodule Polyn.Migration do
 
   @doc """
   Creates a new Consumer for a stream. Options are what's available on
-  `Jetstream.API.Consumer.t()`
+  `Jetstream.API.Consumer.t()`.
+  Note: Consumers can't be updated after they are created. You must delete and
+  recreate it instead.
 
   ## Examples
 
