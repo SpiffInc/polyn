@@ -8,53 +8,39 @@ defmodule Polyn.Migration.Command do
   def execute({id, :create_stream, opts}, migrator_state) do
     stream = struct(Jetstream.API.Stream, opts)
 
-    case Jetstream.API.Stream.create(Connection.name(), stream) do
-      {:error, reason} ->
-        raise_migration_exception(id, migrator_state, reason)
-
-      success ->
-        success
-    end
+    Jetstream.API.Stream.create(Connection.name(), stream)
+    |> handle_execute_result(id, migrator_state)
   end
 
   def execute({id, :update_stream, opts}, migrator_state) do
     stream = update_stream_config(opts)
 
-    case Jetstream.API.Stream.update(Connection.name(), stream) do
-      {:error, reason} ->
-        raise_migration_exception(id, migrator_state, reason)
-
-      success ->
-        success
-    end
+    Jetstream.API.Stream.update(Connection.name(), stream)
+    |> handle_execute_result(id, migrator_state)
   end
 
   def execute({id, :delete_stream, stream_name}, migrator_state) do
-    case Jetstream.API.Stream.delete(Connection.name(), stream_name) do
-      {:error, reason} ->
-        raise_migration_exception(id, migrator_state, reason)
-
-      success ->
-        success
-    end
+    Jetstream.API.Stream.delete(Connection.name(), stream_name)
+    |> handle_execute_result(id, migrator_state)
   end
 
   def execute({id, :create_consumer, opts}, migrator_state) do
     consumer = struct(Jetstream.API.Consumer, opts)
 
-    case Jetstream.API.Consumer.create(Connection.name(), consumer) do
-      {:error, reason} ->
-        raise_migration_exception(id, migrator_state, reason)
-
-      success ->
-        success
-    end
+    Jetstream.API.Consumer.create(Connection.name(), consumer)
+    |> handle_execute_result(id, migrator_state)
   end
 
   def execute(command, _migrator_state) do
     raise Polyn.Migration.Exception,
           "Command #{inspect(command)} not recognized"
   end
+
+  defp handle_execute_result({:error, reason}, id, migrator_state) do
+    raise_migration_exception(id, migrator_state, reason)
+  end
+
+  defp handle_execute_result(success, _id, _migrator_state), do: success
 
   # We only want to require that changed attributes are passed in the migration.
   # The %Stream{} struct requires certain fields that may already be set. We want
