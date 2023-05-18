@@ -12,6 +12,7 @@ defmodule Polyn.Migration.Migrator do
   * `:migrations_dir` - Location of migration files
   * `:running_migration_id` - The timestamp/id of the migration file being run. Taken from the beginning of the file name
   * `:migration_bucket_info` - The Stream info for the migration KV bucket
+  * `:runner` - Process for keeping commands to run
   * `:migration_files` - The file names of migration files
   * `:migration_modules` - A list of tuples with the migration id and module code
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
@@ -20,10 +21,11 @@ defmodule Polyn.Migration.Migrator do
           migrations_dir: binary(),
           running_migration_id: non_neg_integer() | nil,
           migration_bucket_info: Jetstream.API.Stream.info() | nil,
-          migration_files: list(binary()),
-          migration_modules: list({integer(), module()}),
-          commands: list({integer(), tuple()}),
-          already_run_migrations: list(binary())
+          runner: pid() | nil,
+          migration_files: [binary()],
+          migration_modules: [{integer(), module()}],
+          commands: [{integer(), tuple()}],
+          already_run_migrations: [binary()]
         }
 
   # Holds the state of the migration as we move through migration steps
