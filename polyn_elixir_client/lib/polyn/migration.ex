@@ -61,6 +61,20 @@ defmodule Polyn.Migration do
     Runner.add_command(runner(), :create_consumer, opts)
   end
 
+  @doc """
+  Deletes a consumer from a stream. Consumers can have the same name for different
+  streams so you must supply the stream name.
+
+  ## Examples
+
+      iex>delete_consumer(durable_name: "test_consumer", stream_name: "test_stream")
+      :ok
+  """
+  @spec delete_consumer(consumer_options :: keyword()) :: :ok
+  def delete_consumer(opts) when is_list(opts) do
+    Runner.add_command(runner(), :delete_consumer, opts)
+  end
+
   defp runner do
     Process.get(:polyn_migration_runner)
   end

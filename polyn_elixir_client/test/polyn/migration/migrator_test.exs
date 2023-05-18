@@ -250,6 +250,33 @@ defmodule Polyn.Migration.MigratorTest do
 
       assert info.config.durable_name == @common_consumer_name
     end
+
+    test "adds a migration to delete a consumer", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      Consumer.create(Connection.name(), %Consumer{
+        durable_name: @common_consumer_name,
+        stream_name: @common_stream_name
+      })
+
+      add_migration_file(context.migrations_dir, "1234_create_consumer.exs", """
+      defmodule ExampleCreateConsumer do
+        import Polyn.Migration
+
+        def change do
+          delete_consumer(durable_name: "#{@common_consumer_name}", stream_name: "#{@common_stream_name}")
+        end
+      end
+      """)
+
+      run(context)
+
+      assert {:error, %{"code" => 404}} =
+               Consumer.info(Connection.name(), @common_stream_name, @common_consumer_name)
+    end
   end
 
   defp add_migration_file(dir, file_name, contents) do

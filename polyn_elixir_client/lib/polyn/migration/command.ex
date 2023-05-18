@@ -31,6 +31,14 @@ defmodule Polyn.Migration.Command do
     |> handle_execute_result(id, migrator_state)
   end
 
+  def execute({id, :delete_consumer, opts}, migrator_state) do
+    stream_name = Keyword.get(opts, :stream_name)
+    durable_name = Keyword.get(opts, :durable_name)
+
+    Jetstream.API.Consumer.delete(Connection.name(), stream_name, durable_name)
+    |> handle_execute_result(id, migrator_state)
+  end
+
   def execute(command, _migrator_state) do
     raise Polyn.Migration.Exception,
           "Command #{inspect(command)} not recognized"
