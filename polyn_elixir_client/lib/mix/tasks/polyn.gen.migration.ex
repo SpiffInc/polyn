@@ -15,6 +15,10 @@ defmodule Mix.Tasks.Polyn.Gen.Migration do
     |> Polyn.Migration.Generator.run()
   end
 
+  defp parse_args([]) do
+    Mix.raise("you must supply the snake_cased name of the migration")
+  end
+
   defp parse_args(args) do
     {options, [name]} = OptionParser.parse!(args, strict: [dir: :string])
 
