@@ -60,7 +60,7 @@ config :polyn, :source_root, "orders.payments"
 
 ### NATS Connection
 
-You will need to provide the connection settings for your NATS connection. This will differ in-between environments. More settings options can be seen here: `https://hexdocs.pm/gnat/Gnat.ConnectionSupervisor.html#content`
+You will need to provide the connection settings for your NATS connection. This will differ in-between environments. More settings options can be seen [here](https://hexdocs.pm/gnat/Gnat.ConnectionSupervisor.html#content)
 
 ```elixir
 config :polyn, :nats, %{
