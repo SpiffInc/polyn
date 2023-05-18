@@ -16,11 +16,11 @@ defmodule Polyn.Migration.Runner do
   end
 
   @doc "Add a new command to execute to the state"
-  def add_command(pid, command) do
+  def add_command(pid, command_name, command_opts) do
     running_migration_id = get_running_migration_id(pid)
 
     Agent.update(pid, fn state ->
-      commands = Enum.concat(state.commands, [{running_migration_id, command}])
+      commands = Enum.concat(state.commands, [{running_migration_id, command_name, command_opts}])
       Map.put(state, :commands, commands)
     end)
   end

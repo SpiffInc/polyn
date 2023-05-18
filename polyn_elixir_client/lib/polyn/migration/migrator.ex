@@ -16,6 +16,7 @@ defmodule Polyn.Migration.Migrator do
   * `:migration_files` - The file names of migration files
   * `:migration_modules` - A list of tuples with the migration id and module code
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
+  * `:commands` - list of tuples with {migration_id, command_name, command_options}
   """
   @type t :: %__MODULE__{
           migrations_dir: binary(),
@@ -24,7 +25,7 @@ defmodule Polyn.Migration.Migrator do
           runner: pid() | nil,
           migration_files: [binary()],
           migration_modules: [{integer(), module()}],
-          commands: [{integer(), tuple()}],
+          commands: [{integer(), atom(), any()}],
           already_run_migrations: [binary()]
         }
 
@@ -33,6 +34,7 @@ defmodule Polyn.Migration.Migrator do
     :running_migration_id,
     :migrations_dir,
     :migration_bucket_info,
+    :runner,
     migration_files: [],
     migration_modules: [],
     commands: [],
@@ -143,9 +145,8 @@ defmodule Polyn.Migration.Migrator do
       module.change()
     end)
 
-    state = Runner.get_state(pid)
+    state = Runner.get_state(pid) |> Map.put(:running_migration_id, nil)
     Runner.stop(pid)
-
     state
   end
 
@@ -154,9 +155,9 @@ defmodule Polyn.Migration.Migrator do
     Enum.group_by(commands, &elem(&1, 0))
     |> Enum.sort_by(fn {key, _val} -> key end)
     |> Enum.each(fn {id, commands} ->
-      Enum.each(commands, &Polyn.Migration.Command.execute/1)
+      Enum.each(commands, &Polyn.Migration.Command.execute(&1, state))
       # We only want to put the migration id into the stream once we know
-      # it was successfully executed
+      # all its commands were successfully executed
       Migration.Bucket.add_migration(id)
     end)
 

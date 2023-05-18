@@ -16,8 +16,7 @@ defmodule Polyn.Migration do
   """
   @spec create_stream(stream_options :: keyword()) :: :ok
   def create_stream(opts) when is_list(opts) do
-    command = {:create_stream, opts}
-    Runner.add_command(runner(), command)
+    Runner.add_command(runner(), :create_stream, opts)
   end
 
   @doc """
@@ -32,8 +31,7 @@ defmodule Polyn.Migration do
   """
   @spec update_stream(stream_options :: keyword()) :: :ok
   def update_stream(opts) when is_list(opts) do
-    command = {:update_stream, opts}
-    Runner.add_command(runner(), command)
+    Runner.add_command(runner(), :update_stream, opts)
   end
 
   @doc """
@@ -46,8 +44,7 @@ defmodule Polyn.Migration do
   """
   @spec delete_stream(stream_name :: binary()) :: :ok
   def delete_stream(stream_name) do
-    command = {:delete_stream, stream_name}
-    Runner.add_command(runner(), command)
+    Runner.add_command(runner(), :delete_stream, stream_name)
   end
 
   defp runner do

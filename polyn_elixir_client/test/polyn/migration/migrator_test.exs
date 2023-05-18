@@ -36,6 +36,8 @@ defmodule Polyn.Migration.MigratorTest do
            end) =~ "No migrations found at #{context.migrations_dir}"
   end
 
+  # Turning off log because of no migrations found message
+  @tag capture_log: true
   test "creates migration bucket if there is none", context do
     assert run(context) == :ok
 
@@ -89,9 +91,13 @@ defmodule Polyn.Migration.MigratorTest do
       end
       """)
 
-      assert_raise(Polyn.Migration.Exception, fn ->
-        run(context)
-      end)
+      %{message: msg} =
+        assert_raise(Polyn.Migration.Exception, fn ->
+          run(context)
+        end)
+
+      assert msg =~
+               "Error running migration file 1234_create_stream.exs - \":subjects must be a list of strings\""
     end
 
     test "does not run already run migrations", context do
