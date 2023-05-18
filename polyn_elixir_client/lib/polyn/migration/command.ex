@@ -2,32 +2,33 @@ defmodule Polyn.Migration.Command do
   # Where we execute the commands
   @moduledoc false
 
+  alias Jetstream.API.{Consumer, Stream}
   alias Polyn.Connection
 
   @doc "Actually apply the change to the server"
   def execute({id, :create_stream, opts}, migrator_state) do
-    stream = struct(Jetstream.API.Stream, opts)
+    stream = struct(Stream, opts)
 
-    Jetstream.API.Stream.create(Connection.name(), stream)
+    Stream.create(Connection.name(), stream)
     |> handle_execute_result(id, migrator_state)
   end
 
   def execute({id, :update_stream, opts}, migrator_state) do
     stream = update_stream_config(opts)
 
-    Jetstream.API.Stream.update(Connection.name(), stream)
+    Stream.update(Connection.name(), stream)
     |> handle_execute_result(id, migrator_state)
   end
 
   def execute({id, :delete_stream, stream_name}, migrator_state) do
-    Jetstream.API.Stream.delete(Connection.name(), stream_name)
+    Stream.delete(Connection.name(), stream_name)
     |> handle_execute_result(id, migrator_state)
   end
 
   def execute({id, :create_consumer, opts}, migrator_state) do
-    consumer = struct(Jetstream.API.Consumer, opts)
+    consumer = struct(Consumer, opts)
 
-    Jetstream.API.Consumer.create(Connection.name(), consumer)
+    Consumer.create(Connection.name(), consumer)
     |> handle_execute_result(id, migrator_state)
   end
 
@@ -35,12 +36,12 @@ defmodule Polyn.Migration.Command do
     stream_name = Keyword.get(opts, :stream_name)
     durable_name = Keyword.get(opts, :durable_name)
 
-    Jetstream.API.Consumer.delete(Connection.name(), stream_name, durable_name)
+    Consumer.delete(Connection.name(), stream_name, durable_name)
     |> handle_execute_result(id, migrator_state)
   end
 
   def execute(command, _migrator_state) do
-    raise Polyn.Migration.Exception,
+    raise Migration.Exception,
           "Command #{inspect(command)} not recognized"
   end
 
@@ -57,7 +58,7 @@ defmodule Polyn.Migration.Command do
     info =
       case Jetstream.API.Stream.info(Connection.name(), opts[:name]) do
         {:ok, info} -> info
-        {:error, reason} -> raise Polyn.Migration.Exception, inspect(reason)
+        {:error, reason} -> raise Migration.Exception, inspect(reason)
       end
 
     Map.merge(info.config, Map.new(opts))
@@ -65,7 +66,7 @@ defmodule Polyn.Migration.Command do
 
   defp raise_migration_exception(id, state, reason) do
     msg = get_migration_file(id, state) |> migration_message(reason)
-    raise Polyn.Migration.Exception, msg
+    raise Migration.Exception, msg
   end
 
   defp get_migration_file(migration_id, state) do

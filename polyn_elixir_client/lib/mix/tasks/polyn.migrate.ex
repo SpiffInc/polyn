@@ -6,21 +6,22 @@ defmodule Mix.Tasks.Polyn.Migrate do
 
   use Mix.Task
 
+  alias Polyn.Migration.Migrator
+
   def run(args) do
     {:ok, _apps} = Application.ensure_all_started(:polyn)
 
     :ok = Polyn.Connection.wait_for_connection()
 
     parse_args(args)
-    |> Polyn.Migration.Migrator.run()
+    |> Migrator.run()
   end
 
   defp parse_args(args) do
     {options, []} = OptionParser.parse!(args, strict: [migrations_dir: :string])
 
     [
-      migrations_dir:
-        Keyword.get(options, :migrations_dir, Polyn.Migration.Migrator.migrations_dir())
+      migrations_dir: Keyword.get(options, :migrations_dir, Migrator.migrations_dir())
     ]
   end
 end

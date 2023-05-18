@@ -10,9 +10,11 @@ defmodule Mix.Tasks.Polyn.Gen.Migration do
 
   use Mix.Task
 
+  alias Polyn.Migration
+
   def run(args) do
     parse_args(args)
-    |> Polyn.Migration.Generator.run()
+    |> Migration.Generator.run()
   end
 
   defp parse_args([]) do
@@ -24,7 +26,7 @@ defmodule Mix.Tasks.Polyn.Gen.Migration do
 
     %{
       name: name,
-      dir: Keyword.get(options, :dir, Polyn.Migration.Migrator.migrations_dir())
+      dir: Keyword.get(options, :dir, Migration.Migrator.migrations_dir())
     }
   end
 end

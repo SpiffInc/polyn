@@ -155,7 +155,7 @@ defmodule Polyn.Migration.Migrator do
     Enum.group_by(commands, &elem(&1, 0))
     |> Enum.sort_by(fn {key, _val} -> key end)
     |> Enum.each(fn {id, commands} ->
-      Enum.each(commands, &Polyn.Migration.Command.execute(&1, state))
+      Enum.each(commands, &Migration.Command.execute(&1, state))
       # We only want to put the migration id into the stream once we know
       # all its commands were successfully executed
       Migration.Bucket.add_migration(id)

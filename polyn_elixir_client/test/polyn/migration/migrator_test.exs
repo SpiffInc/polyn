@@ -1,10 +1,10 @@
 defmodule Polyn.Migration.MigratorTest do
   use ExUnit.Case, async: true
 
+  alias Jetstream.API.{Consumer, Stream}
+  alias Polyn.Connection
   alias Polyn.Migration
   alias Polyn.Migration.Migrator
-  alias Polyn.Connection
-  alias Jetstream.API.{Stream, Consumer}
   import ExUnit.CaptureLog
 
   @moduletag :tmp_dir

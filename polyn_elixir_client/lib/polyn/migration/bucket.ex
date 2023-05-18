@@ -3,11 +3,11 @@ defmodule Polyn.Migration.Bucket do
   # which migrations we've already run
   @moduledoc false
 
-  alias Polyn.Connection
   alias Jetstream.API.KV
+  alias Polyn.Connection
 
   @bucket_name "POLYN_MIGRATIONS"
-  @no_key_found_code 10037
+  @no_key_found_code 10_037
 
   def create do
     KV.create_bucket(Connection.name(), @bucket_name)
