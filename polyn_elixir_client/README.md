@@ -106,6 +106,9 @@ end
 
 Inside the `change` function you can use the functions available in `Polyn.Migration` to update the NATS server. You can then run `mix polyn.migrate` to apply your changes.
 
+### Tracking Previously Run Migrations
+
+Polyn uses a shared Key-Value bucket in NATS to avoid re-running migrations. It uses the application's `:source_root` as the key to determine which list of run migrations belong to which application.
 
 ## Usage
 
