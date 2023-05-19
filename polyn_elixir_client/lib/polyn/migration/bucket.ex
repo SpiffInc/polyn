@@ -9,24 +9,24 @@ defmodule Polyn.Migration.Bucket do
   @bucket_name "POLYN_MIGRATIONS"
   @no_key_found_code 10_037
 
-  def create do
-    KV.create_bucket(Connection.name(), @bucket_name)
+  def create(bucket_name \\ @bucket_name) do
+    KV.create_bucket(Connection.name(), bucket_name)
   end
 
-  def delete do
-    KV.delete_bucket(Connection.name(), @bucket_name)
+  def delete(bucket_name \\ @bucket_name) do
+    KV.delete_bucket(Connection.name(), bucket_name)
   end
 
-  def info do
-    Jetstream.API.Stream.info(Connection.name(), "KV_#{@bucket_name}")
+  def info(bucket_name \\ @bucket_name) do
+    Jetstream.API.Stream.info(Connection.name(), "KV_#{bucket_name}")
   end
 
-  def contents do
-    KV.contents(Connection.name(), @bucket_name)
+  def contents(bucket_name \\ @bucket_name) do
+    KV.contents(Connection.name(), bucket_name)
   end
 
-  def already_run_migrations do
-    case KV.get_value(Connection.name(), @bucket_name, bucket_key()) do
+  def already_run_migrations(bucket_name \\ @bucket_name) do
+    case KV.get_value(Connection.name(), bucket_name, bucket_key()) do
       {:error, %{"err_code" => @no_key_found_code}} ->
         []
 
@@ -39,9 +39,11 @@ defmodule Polyn.Migration.Bucket do
     end
   end
 
-  def add_migration(migration_id) do
-    migrations = already_run_migrations() |> Enum.concat([migration_id]) |> Jason.encode!()
-    KV.put_value(Connection.name(), @bucket_name, bucket_key(), migrations)
+  def add_migration(migration_id, bucket_name \\ @bucket_name) do
+    migrations =
+      already_run_migrations(bucket_name) |> Enum.concat([migration_id]) |> Jason.encode!()
+
+    KV.put_value(Connection.name(), bucket_name, bucket_key(), migrations)
   end
 
   defp bucket_key do
