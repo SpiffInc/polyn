@@ -4,6 +4,7 @@ defmodule Polyn.Migration.Command do
 
   alias Jetstream.API.{Consumer, Stream}
   alias Polyn.Connection
+  alias Polyn.Migration
 
   @doc "Actually apply the change to the server"
   def execute({id, :create_stream, opts}, migrator_state) do
