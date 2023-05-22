@@ -3,7 +3,7 @@ defmodule Polyn.MixProject do
 
   @github "https://github.com/SpiffInc/polyn/tree/main/polyn_elixir_client"
 
-  def version, do: "0.5.0"
+  def version, do: "0.6.0"
 
   def project do
     [
@@ -42,7 +42,8 @@ defmodule Polyn.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {Polyn.Application, []}
     ]
   end
 

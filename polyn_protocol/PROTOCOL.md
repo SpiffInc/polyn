@@ -184,3 +184,16 @@ If the message schema does not have an `identity` key the subject will be the na
 #### Identity message
 
 If the message schema has an `identity` key the subject will be the name of the message concatanated with one token for the identity value. For example, if a message schema named `user.created.v1` had an `identity` key of `id`, the stream `subjects` would be `"user.created.v1.*"`.
+
+## JetStream Migrations
+
+Polyn clients MUST implement a migration system for JetStream configuration. Each change to the JetStream configuration should have a new file with a name that looks like this:
+```
+<timestamp>_<name_of_migration>.<extension>
+```
+
+For example: `20230519173058_create_user_stream.exs`
+
+The timestamp MUST be an integer timestamp that can be used as the id to uniquely identify the migration. The timestamps must be the same number of characters so they can be sorted.
+
+Migrations that are run must be included in a Key Value bucket named `POLYN_MIGRATIONS`. Each application should have its own key which is the `source_root` for that application. The value should be a sorted JSON array of integer timestamps of the migration files that have already run successfully.
