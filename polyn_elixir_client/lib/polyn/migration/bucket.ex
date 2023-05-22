@@ -34,6 +34,9 @@ defmodule Polyn.Migration.Bucket do
         raise Polyn.Migration.Exception,
               "Error looking up already run migrations, #{inspect(reason)}"
 
+      nil ->
+        []
+
       migrations ->
         Jason.decode!(migrations)
     end
