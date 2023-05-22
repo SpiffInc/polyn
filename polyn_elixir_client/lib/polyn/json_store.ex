@@ -24,7 +24,7 @@ defmodule Polyn.JSONStore do
 
   ## Examples
 
-      iex>Polyn.Jetstream.KeyValueStore.start_link(connection_name: :gnat)
+      iex>Polyn.Jetstream.JSONStore.start_link(connection_name: :gnat)
       :ok
   """
   @spec start_link(opts :: [option()]) :: GenServer.on_start()
