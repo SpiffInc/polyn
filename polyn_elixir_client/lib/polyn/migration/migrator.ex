@@ -55,6 +55,11 @@ defmodule Polyn.Migration.Migrator do
   end
 
   def run(opts \\ []) do
+    # The ConnectionSupervisor startup is non-blocking, so we
+    # need to make sure the connection to NATS is established
+    # before we attempt to migrate
+    :ok = Polyn.Connection.wait_for_connection()
+
     new(opts)
     |> get_migration_bucket_info()
     |> create_migration_bucket()
