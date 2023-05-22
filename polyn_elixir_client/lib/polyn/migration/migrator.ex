@@ -1,7 +1,8 @@
 defmodule Polyn.Migration.Migrator do
-  # Manages the creation and updating of streams and consumers that
-  # an application owns
-  @moduledoc false
+  @moduledoc """
+  Manages the creation and updating of streams and consumers that
+  an application owns
+  """
 
   require Logger
 
@@ -54,6 +55,11 @@ defmodule Polyn.Migration.Migrator do
     Path.join(File.cwd!(), "/priv/polyn/migrations")
   end
 
+  @doc """
+  Entry point for starting migrations
+  """
+  @spec run(opts :: [{:migrations_dir, binary()}]) :: :ok
+  @spec run() :: :ok
   def run(opts \\ []) do
     # The ConnectionSupervisor startup is non-blocking, so we
     # need to make sure the connection to NATS is established
