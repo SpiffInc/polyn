@@ -22,11 +22,12 @@ defmodule Polyn.Migration.BucketTest do
     Migration.Bucket.create(@bucket_name)
     Migration.Bucket.add_migration("1234", @bucket_name)
 
-    KV.delete_key(
-      Polyn.Connection.name(),
-      @bucket_name,
-      Application.get_env(:polyn, :source_root)
-    )
+    assert :ok =
+             KV.delete_key(
+               Polyn.Connection.name(),
+               @bucket_name,
+               Application.get_env(:polyn, :source_root)
+             )
 
     assert [] = Migration.Bucket.already_run_migrations(@bucket_name)
   end
