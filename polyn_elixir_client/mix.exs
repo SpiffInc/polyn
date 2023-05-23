@@ -18,7 +18,7 @@ defmodule Polyn.MixProject do
       name: "Polyn",
       source_url: @github,
       docs: [
-        extras: ["README.md"],
+        extras: ["README.md", "CHANGELOG.md"],
         api_reference: false,
         main: "readme"
       ],
