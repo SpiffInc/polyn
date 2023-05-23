@@ -52,7 +52,7 @@ defmodule Polyn.Migration.Migrator do
   Path of migration files
   """
   def migrations_dir do
-    Path.join(File.cwd!(), "/priv/polyn/migrations")
+    Path.join([:code.priv_dir(otp_app()), "polyn", "migrations"])
   end
 
   @doc """
@@ -61,7 +61,7 @@ defmodule Polyn.Migration.Migrator do
   @spec run(opts :: [{:migrations_dir, binary()}]) :: :ok
   @spec run() :: :ok
   def run(opts \\ []) do
-    # The ConnectionSupervisor startup is non-blocking, so we
+    # The Gnat ConnectionSupervisor startup is non-blocking, so we
     # need to make sure the connection to NATS is established
     # before we attempt to migrate
     :ok = Polyn.Connection.wait_for_connection()
@@ -173,5 +173,9 @@ defmodule Polyn.Migration.Migrator do
     end)
 
     state
+  end
+
+  defp otp_app do
+    Application.fetch_env!(:polyn, :otp_app)
   end
 end
