@@ -23,7 +23,7 @@ defmodule Polyn.Migration.BucketTest do
     Migration.Bucket.add_migration("1234", @bucket_name)
 
     assert :ok =
-             KV.delete_key(
+             KV.purge_key(
                Polyn.Connection.name(),
                @bucket_name,
                Application.get_env(:polyn, :source_root)
