@@ -122,7 +122,7 @@ Polyn uses a shared Key-Value bucket in NATS to avoid re-running migrations. It 
 
 When using `mix release` to deploy, `mix` and Mix Tasks are not available, so you can't use `mix polyn.migrate` to do your migrations.
 
-Instead you can use a built-in `Polyn.Release` module to execute migrations in the compile application
+Instead you can use a built-in `Polyn.Release` module to execute migrations in the compiled application
 
 You can use it from the release like this:
 
