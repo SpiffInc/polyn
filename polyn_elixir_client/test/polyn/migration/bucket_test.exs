@@ -1,6 +1,7 @@
 defmodule Polyn.Migration.BucketTest do
   use ExUnit.Case, async: true
 
+  alias Jetstream.API.KV
   alias Polyn.Migration
 
   @bucket_name "BUCKET_TEST"
@@ -21,7 +22,7 @@ defmodule Polyn.Migration.BucketTest do
     Migration.Bucket.create(@bucket_name)
     Migration.Bucket.add_migration("1234", @bucket_name)
 
-    Jetstream.API.KV.delete_key(
+    KV.delete_key(
       Polyn.Connection.name(),
       @bucket_name,
       Application.get_env(:polyn, :source_root)

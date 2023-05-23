@@ -5,6 +5,8 @@ defmodule Polyn.Release do
   provides a way to run migrations in a release.
   """
 
+  alias Polyn.Migration
+
   @doc """
   Run migrations in a release
 
@@ -18,7 +20,7 @@ defmodule Polyn.Release do
   def migrate do
     load_app()
 
-    Polyn.Migration.Migrator.run()
+    Migration.Migrator.run()
   end
 
   defp load_app do
