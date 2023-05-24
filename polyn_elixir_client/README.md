@@ -58,14 +58,6 @@ The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudeven
 config :polyn, :source_root, "orders.payments"
 ```
 
-### OTP App
-
-Polyn needs to know the name of the otp app that's using it
-
-```elixir
-config :polyn, :otp_app, :my_app
-```
-
 ### NATS Connection
 
 You will need to provide the connection settings for your NATS connection. This will differ in-between environments. More settings options can be seen [here](https://hexdocs.pm/gnat/Gnat.ConnectionSupervisor.html#content)
@@ -122,13 +114,34 @@ Polyn uses a shared Key-Value bucket in NATS to avoid re-running migrations. It 
 
 When using `mix release` to deploy, `mix` and Mix Tasks are not available, so you can't use `mix polyn.migrate` to do your migrations.
 
-Instead you can use a built-in `Polyn.Release` module to execute migrations in the compiled application
+Instead you'll need to run `mix polyn.gen.release` which will add a `lib/my_app/release.ex` file to your app (if you already have this file it will append to it). The file will look something like this:
 
-You can use it from the release like this:
+```elixir
+defmodule MyApp.Release do
+  @app :my_app
+
+  def polyn_migrate do
+    load_app()
+    {:ok, _apps} = Application.ensure_all_started(:polyn)
+
+    dir = Path.join([:code.priv_dir(@app), "polyn", "migrations"])
+    Polyn.Migration.Migrator.run(migrations_dir: dir)
+  end
+
+  defp load_app do
+    Application.load(@app)
+  end
+end
+```
+
+You can use the `polyn_migrate` function from this module to execute migrations in the compiled release like this:
 
 ```
-_build/prod/rel/my_app/bin/my_app eval "Polyn.Release.migrate"
+_build/prod/rel/my_app/bin/my_app eval "MyApp.Release.polyn_migrate"
 ```
+
+Sometimes multiple OTP apps are part of a single application, so Polyn doesn't assume which app to use for accessing and running migration files. This is why you need to generate the `release.ex` file yourself and pass in the OTP app you want.
+
 
 ## Usage
 

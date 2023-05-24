@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Polyn.Gen.Release do
 
   def run(args) do
     {options, []} = OptionParser.parse!(args, strict: [dir: :string])
-    path = Path.join(dir(options), "polyn_release.ex")
+    path = Path.join([dir(options), Atom.to_string(app_name()), "release.ex"])
     assigns = [mod: module_name(), app: app_name()]
 
     Mix.Generator.create_file(path, release_file_template(assigns))
@@ -25,15 +25,16 @@ defmodule Mix.Tasks.Polyn.Gen.Release do
 
   defp module_name do
     prefix = app_name() |> Atom.to_string() |> Macro.camelize()
-    Module.concat([prefix, Polyn, Release])
+    Module.concat([prefix, Release])
   end
 
   Mix.Generator.embed_template(:release_file, """
   defmodule <%= inspect @mod %> do
     @app <%= inspect @app %>
 
-    def migrate do
+    def polyn_migrate do
       load_app()
+      {:ok, _apps} = Application.ensure_all_started(:polyn)
 
       dir = Path.join([:code.priv_dir(@app), "polyn", "migrations"])
       Polyn.Migration.Migrator.run(migrations_dir: dir)
@@ -41,7 +42,6 @@ defmodule Mix.Tasks.Polyn.Gen.Release do
 
     defp load_app do
       Application.load(@app)
-      {:ok, _apps} = Application.ensure_all_started(:polyn)
     end
   end
   """)
