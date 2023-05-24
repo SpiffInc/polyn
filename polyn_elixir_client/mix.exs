@@ -3,7 +3,7 @@ defmodule Polyn.MixProject do
 
   @github "https://github.com/SpiffInc/polyn/tree/main/polyn_elixir_client"
 
-  def version, do: "0.6.0"
+  def version, do: "0.6.1"
 
   def project do
     [
@@ -18,7 +18,7 @@ defmodule Polyn.MixProject do
       name: "Polyn",
       source_url: @github,
       docs: [
-        extras: ["README.md"],
+        extras: ["README.md", "CHANGELOG.md"],
         api_reference: false,
         main: "readme"
       ],

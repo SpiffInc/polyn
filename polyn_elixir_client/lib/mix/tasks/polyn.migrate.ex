@@ -11,8 +11,6 @@ defmodule Mix.Tasks.Polyn.Migrate do
   def run(args) do
     {:ok, _apps} = Application.ensure_all_started(:polyn)
 
-    :ok = Polyn.Connection.wait_for_connection()
-
     parse_args(args)
     |> Migrator.run()
   end

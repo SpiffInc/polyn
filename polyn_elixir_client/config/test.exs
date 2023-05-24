@@ -2,6 +2,7 @@ import Config
 
 config :polyn, :domain, "com.test"
 config :polyn, :source_root, "user.backend"
+config :polyn, :otp_app, :polyn
 
 config :polyn, :nats, %{
   name: :gnat,

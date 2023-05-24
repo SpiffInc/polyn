@@ -58,6 +58,14 @@ The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudeven
 config :polyn, :source_root, "orders.payments"
 ```
 
+### OTP App
+
+Polyn needs to know the name of the otp app that's using it
+
+```elixir
+config :polyn, :otp_app, :my_app
+```
+
 ### NATS Connection
 
 You will need to provide the connection settings for your NATS connection. This will differ in-between environments. More settings options can be seen [here](https://hexdocs.pm/gnat/Gnat.ConnectionSupervisor.html#content)
@@ -109,6 +117,18 @@ Inside the `change` function you can use the functions available in `Polyn.Migra
 ### Tracking Previously Run Migrations
 
 Polyn uses a shared Key-Value bucket in NATS to avoid re-running migrations. It uses the application's `:source_root` as the key to determine which list of run migrations belong to which application.
+
+### Releases
+
+When using `mix release` to deploy, `mix` and Mix Tasks are not available, so you can't use `mix polyn.migrate` to do your migrations.
+
+Instead you can use a built-in `Polyn.Release` module to execute migrations in the compiled application
+
+You can use it from the release like this:
+
+```
+_build/prod/rel/my_app/bin/my_app eval "Polyn.Release.migrate"
+```
 
 ## Usage
 
