@@ -52,7 +52,7 @@ defmodule Polyn.Migration.Migrator do
   Path of migration files
   """
   def migrations_dir do
-    Path.join([:code.priv_dir(otp_app()), "polyn", "migrations"])
+    Path.join([File.cwd!(), "priv", "polyn", "migrations"])
   end
 
   @doc """
@@ -173,9 +173,5 @@ defmodule Polyn.Migration.Migrator do
     end)
 
     state
-  end
-
-  defp otp_app do
-    Application.fetch_env!(:polyn, :otp_app)
   end
 end
