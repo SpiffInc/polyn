@@ -10,6 +10,12 @@ defmodule Polyn.Migration.Migrator do
   alias Polyn.Migration.Runner
 
   @typedoc """
+  Tuple of {migration_id, command_name, command_options}
+  """
+  @type command :: {integer(), atom(), any()}
+
+  @typedoc """
+  * `:direction` - Which direction to migrate
   * `:migrations_dir` - Location of migration files
   * `:running_migration_id` - The timestamp/id of the migration file being run. Taken from the beginning of the file name
   * `:migration_bucket_info` - The Stream info for the migration KV bucket
@@ -17,16 +23,17 @@ defmodule Polyn.Migration.Migrator do
   * `:migration_files` - The file names of migration files
   * `:migration_modules` - A list of tuples with the migration id and module code
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
-  * `:commands` - list of tuples with {migration_id, command_name, command_options}
+  * `:commands` - list of command tuples with
   """
   @type t :: %__MODULE__{
+          direction: :up | :down,
           migrations_dir: binary(),
           running_migration_id: non_neg_integer() | nil,
           migration_bucket_info: Jetstream.API.Stream.info() | nil,
           runner: pid() | nil,
           migration_files: [binary()],
           migration_modules: [{integer(), module()}],
-          commands: [{integer(), atom(), any()}],
+          commands: [command()],
           already_run_migrations: [binary()]
         }
 
