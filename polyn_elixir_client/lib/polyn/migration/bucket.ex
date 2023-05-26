@@ -44,7 +44,10 @@ defmodule Polyn.Migration.Bucket do
 
   def add_migration(migration_id, bucket_name \\ @bucket_name) do
     migrations =
-      already_run_migrations(bucket_name) |> Enum.concat([migration_id]) |> Jason.encode!()
+      already_run_migrations(bucket_name)
+      |> Enum.concat([migration_id])
+      |> Enum.sort()
+      |> Jason.encode!()
 
     KV.put_value(Connection.name(), bucket_name, bucket_key(), migrations)
   end

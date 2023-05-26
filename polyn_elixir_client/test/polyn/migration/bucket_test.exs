@@ -15,7 +15,7 @@ defmodule Polyn.Migration.BucketTest do
     Migration.Bucket.create(@bucket_name)
     Migration.Bucket.add_migration("1234", @bucket_name)
 
-    {:ok, %{"user.backend" => "[\"1234\"]"}} = Migration.Bucket.contents(@bucket_name)
+    assert {:ok, %{"user.backend" => "[\"1234\"]"}} = Migration.Bucket.contents(@bucket_name)
   end
 
   test "already_run_migrations returns empty list if key deleted" do
@@ -30,6 +30,19 @@ defmodule Polyn.Migration.BucketTest do
              )
 
     assert [] = Migration.Bucket.already_run_migrations(@bucket_name)
+  end
+
+  # This could happen if one engineer creates a migration after another engineer,
+  # but get's their migration merged first.
+  test "puts migrations in order if existing migration has later timestamp" do
+    Migration.Bucket.create(@bucket_name)
+    Migration.Bucket.add_migration("5555", @bucket_name)
+    :timer.sleep(100)
+    Migration.Bucket.add_migration("1234", @bucket_name)
+    :timer.sleep(100)
+
+    assert {:ok, %{"user.backend" => "[\"1234\",\"5555\"]"}} =
+             Migration.Bucket.contents(@bucket_name)
   end
 
   test "raises if adding migration when bucket doesn't exist" do
