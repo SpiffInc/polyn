@@ -345,6 +345,29 @@ defmodule Polyn.Migration.MigratorTest do
 
       assert [] == Migration.Bucket.already_run_migrations()
     end
+
+    test "raises for reversing delete_stream", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      add_migration_file(context.migrations_dir, "1234_delete_stream.exs", """
+      defmodule ExampleDeleteStream do
+        import Polyn.Migration
+
+        def change do
+          delete_stream("#{@common_stream_name}")
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+
+      assert_raise(Polyn.Migration.Exception, fn ->
+        Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+      end)
+    end
   end
 
   defp add_migration_file(dir, file_name, contents) do

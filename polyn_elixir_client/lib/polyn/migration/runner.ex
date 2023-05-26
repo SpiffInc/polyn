@@ -19,23 +19,43 @@ defmodule Polyn.Migration.Runner do
   def add_command(pid, command_name, command_opts) do
     running_migration_id = get_running_migration_id(pid)
 
-    Agent.update(pid, fn state ->
-      commands =
-        Enum.concat(state.commands, [
-          build_command(state, running_migration_id, command_name, command_opts)
-        ])
+    state = get_state(pid)
 
-      Map.put(state, :commands, commands)
-    end)
+    command = build_command(state, running_migration_id, command_name, command_opts)
+
+    case command do
+      {:ok, command} ->
+        concat_command(pid, command)
+
+      {:error, message} ->
+        raise Polyn.Migration.Exception, message
+    end
   end
 
-  defp build_command(%{direction: :down}, migration_id, command_name, opts) do
-    {command_name, opts} = reverse(command_name, opts)
-    {migration_id, command_name, opts}
+  defp build_command(%{direction: :down} = state, migration_id, command_name, opts) do
+    case reverse(command_name, opts) do
+      {command_name, opts} ->
+        {:ok, {migration_id, command_name, opts}}
+
+      :error ->
+        file = get_migration_file(migration_id, state)
+
+        {:error,
+         "Migration command #{inspect(command_name)} in file #{file} can't be reversed. " <>
+           "Please implement the `up/0` and `down/0` explicitly in your migration module."}
+    end
   end
 
   defp build_command(_state, migration_id, command_name, opts) do
-    {migration_id, command_name, opts}
+    {:ok, {migration_id, command_name, opts}}
+  end
+
+  defp concat_command(pid, command) do
+    Agent.update(pid, fn state ->
+      commands = Enum.concat(state.commands, [command])
+
+      Map.put(state, :commands, commands)
+    end)
   end
 
   @doc "Update the state to know the id of the migration running"
@@ -59,5 +79,11 @@ defmodule Polyn.Migration.Runner do
 
   defp reverse(:create_consumer, opts) do
     {:delete_consumer, Keyword.take(opts, [:durable_name, :stream_name])}
+  end
+
+  defp reverse(_command, _opts), do: :error
+
+  defp get_migration_file(migration_id, state) do
+    Enum.find(state.migration_files, &String.contains?(&1, migration_id))
   end
 end
