@@ -63,6 +63,27 @@ defmodule Polyn.Migration.MigratorTest do
       assert info.config.name == @common_stream_name
     end
 
+    test "limits replicas based on config", context do
+      Application.put_env(:polyn, :max_replicas, 1)
+
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"], num_replicas: 5)
+        end
+      end
+      """)
+
+      run(context)
+
+      assert {:ok, info} = Stream.info(Connection.name(), @common_stream_name)
+      assert info.config.num_replicas == 1
+
+      Application.delete_env(:polyn, :max_replicas)
+    end
+
     test "adds run migrations to kv bucket", context do
       add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
       defmodule ExampleCreateStream do
