@@ -20,9 +20,22 @@ defmodule Polyn.Migration.Runner do
     running_migration_id = get_running_migration_id(pid)
 
     Agent.update(pid, fn state ->
-      commands = Enum.concat(state.commands, [{running_migration_id, command_name, command_opts}])
+      commands =
+        Enum.concat(state.commands, [
+          build_command(state, running_migration_id, command_name, command_opts)
+        ])
+
       Map.put(state, :commands, commands)
     end)
+  end
+
+  defp build_command(%{direction: :down}, migration_id, command_name, opts) do
+    {command_name, opts} = reverse(command_name, opts)
+    {migration_id, command_name, opts}
+  end
+
+  defp build_command(state, migration_id, command_name, opts) do
+    {migration_id, command_name, opts}
   end
 
   @doc "Update the state to know the id of the migration running"
@@ -38,5 +51,9 @@ defmodule Polyn.Migration.Runner do
 
   def get_state(pid) do
     Agent.get(pid, fn state -> state end)
+  end
+
+  defp reverse(:create_stream, opts) do
+    {:delete_stream, Keyword.get(opts, :name)}
   end
 end

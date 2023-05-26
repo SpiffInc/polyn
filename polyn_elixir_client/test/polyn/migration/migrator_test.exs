@@ -300,6 +300,26 @@ defmodule Polyn.Migration.MigratorTest do
     end
   end
 
+  describe "rollback" do
+    test "reverse create_stream", context do
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+
+      assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
+      assert [] == Migration.Bucket.already_run_migrations()
+    end
+  end
+
   defp add_migration_file(dir, file_name, contents) do
     File.write!(Path.join(dir, file_name), contents)
   end

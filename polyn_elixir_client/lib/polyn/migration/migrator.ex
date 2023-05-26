@@ -39,6 +39,7 @@ defmodule Polyn.Migration.Migrator do
 
   # Holds the state of the migration as we move through migration steps
   defstruct [
+    :direction,
     :running_migration_id,
     :migrations_dir,
     :migration_bucket_info,
@@ -50,7 +51,9 @@ defmodule Polyn.Migration.Migrator do
   ]
 
   def new(opts \\ []) do
-    opts = Keyword.put_new(opts, :migrations_dir, migrations_dir())
+    opts =
+      Keyword.put_new(opts, :migrations_dir, migrations_dir())
+      |> Keyword.put_new(:direction, :up)
 
     struct!(__MODULE__, opts)
   end
@@ -64,8 +67,13 @@ defmodule Polyn.Migration.Migrator do
 
   @doc """
   Entry point for starting migrations
+
+  ## Options
+
+  * `:migrations_dir` - Location of migration files
+  * `:direction` - `:up` or `:down` to run migrations in a specific direction. Defaults to `:up`
   """
-  @spec run(opts :: [{:migrations_dir, binary()}]) :: :ok
+  @spec run(opts :: [{:migrations_dir, binary()} | {:direction, :down | :up}]) :: :ok
   @spec run() :: :ok
   def run(opts \\ []) do
     # The Gnat ConnectionSupervisor startup is non-blocking, so we
@@ -78,6 +86,7 @@ defmodule Polyn.Migration.Migrator do
     |> create_migration_bucket()
     |> get_already_run_migrations()
     |> get_migration_files()
+    |> filter_applicable_files()
     |> compile_migration_files()
     |> get_migration_commands()
     |> execute_commands()
@@ -116,7 +125,6 @@ defmodule Polyn.Migration.Migrator do
         {:ok, files} ->
           files
           |> Enum.filter(&is_elixir_script?/1)
-          |> filter_already_ran(state)
           |> Enum.sort_by(&extract_migration_id/1)
 
         {:error, reason} ->
@@ -131,11 +139,29 @@ defmodule Polyn.Migration.Migrator do
     String.ends_with?(file_name, ".exs")
   end
 
-  defp filter_already_ran(files, %{already_run_migrations: already_run_migrations}) do
-    Enum.reject(files, fn file ->
-      id = extract_migration_id(file)
-      Enum.member?(already_run_migrations, id)
-    end)
+  defp filter_applicable_files(%{direction: :up} = state) do
+    %{already_run_migrations: already_run_migrations, migration_files: files} = state
+
+    files =
+      Enum.reject(files, fn file ->
+        id = extract_migration_id(file)
+        Enum.member?(already_run_migrations, id)
+      end)
+
+    Map.put(state, :migration_files, files)
+  end
+
+  defp filter_applicable_files(%{direction: :down} = state) do
+    %{already_run_migrations: already_run_migrations, migration_files: files} = state
+
+    last_run = List.last(already_run_migrations)
+
+    last_run_file =
+      Enum.find(files, fn file ->
+        extract_migration_id(file) == last_run
+      end)
+
+    Map.put(state, :migration_files, [last_run_file])
   end
 
   defp compile_migration_files(%{migration_files: files, migrations_dir: migrations_dir} = state) do
@@ -173,12 +199,26 @@ defmodule Polyn.Migration.Migrator do
     Enum.group_by(commands, &elem(&1, 0))
     |> Enum.sort_by(fn {key, _val} -> key end)
     |> Enum.each(fn {id, commands} ->
-      Enum.each(commands, &Migration.Command.execute(&1, state))
-      # We only want to put the migration id into the stream once we know
+      Enum.each(commands_order(commands, state), &Migration.Command.execute(&1, state))
+      # We only want to update the migration id in the bucket once we know
       # all its commands were successfully executed
-      Migration.Bucket.add_migration(id)
+      update_migration_bucket(state, id)
     end)
 
     state
+  end
+
+  defp commands_order(commands, %{direction: :down}) do
+    Enum.reverse(commands)
+  end
+
+  defp commands_order(commands, _state), do: commands
+
+  defp update_migration_bucket(%{direction: :down}, id) do
+    Migration.Bucket.remove_migration(id)
+  end
+
+  defp update_migration_bucket(_state, id) do
+    Migration.Bucket.add_migration(id)
   end
 end
