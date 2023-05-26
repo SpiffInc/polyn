@@ -45,6 +45,21 @@ defmodule Polyn.Migration.BucketTest do
              Migration.Bucket.contents(@bucket_name)
   end
 
+  test "removes a migration" do
+    Migration.Bucket.create(@bucket_name)
+    Migration.Bucket.add_migration("1234", @bucket_name)
+    Migration.Bucket.add_migration("5555", @bucket_name)
+
+    :timer.sleep(100)
+
+    assert {:ok, %{"user.backend" => "[\"1234\",\"5555\"]"}} =
+             Migration.Bucket.contents(@bucket_name)
+
+    assert :ok = Migration.Bucket.remove_migration("1234", @bucket_name)
+
+    assert {:ok, %{"user.backend" => "[\"5555\"]"}} = Migration.Bucket.contents(@bucket_name)
+  end
+
   test "raises if adding migration when bucket doesn't exist" do
     assert_raise(Polyn.Migration.Exception, fn ->
       Migration.Bucket.add_migration("1234", @bucket_name)

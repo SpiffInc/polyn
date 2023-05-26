@@ -52,6 +52,15 @@ defmodule Polyn.Migration.Bucket do
     KV.put_value(Connection.name(), bucket_name, bucket_key(), migrations)
   end
 
+  def remove_migration(migration_id, bucket_name \\ @bucket_name) do
+    migrations =
+      already_run_migrations(bucket_name)
+      |> Enum.reject(&(&1 == migration_id))
+      |> Jason.encode!()
+
+    KV.put_value(Connection.name(), bucket_name, bucket_key(), migrations)
+  end
+
   defp bucket_key do
     # We're using the `source_root` as the namespace/key for all the migrations
     # for the application using Polyn. We're assuming only one application owns the
