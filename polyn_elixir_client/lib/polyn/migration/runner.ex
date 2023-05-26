@@ -34,7 +34,7 @@ defmodule Polyn.Migration.Runner do
     {migration_id, command_name, opts}
   end
 
-  defp build_command(state, migration_id, command_name, opts) do
+  defp build_command(_state, migration_id, command_name, opts) do
     {migration_id, command_name, opts}
   end
 
@@ -55,5 +55,9 @@ defmodule Polyn.Migration.Runner do
 
   defp reverse(:create_stream, opts) do
     {:delete_stream, Keyword.get(opts, :name)}
+  end
+
+  defp reverse(:create_consumer, opts) do
+    {:delete_consumer, Keyword.take(opts, [:durable_name, :stream_name])}
   end
 end
