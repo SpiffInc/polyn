@@ -37,9 +37,7 @@ defmodule Polyn.Migration.BucketTest do
   test "puts migrations in order if existing migration has later timestamp" do
     Migration.Bucket.create(@bucket_name)
     Migration.Bucket.add_migration("5555", @bucket_name)
-    :timer.sleep(100)
     Migration.Bucket.add_migration("1234", @bucket_name)
-    :timer.sleep(100)
 
     assert {:ok, %{"user.backend" => "[\"1234\",\"5555\"]"}} =
              Migration.Bucket.contents(@bucket_name)
@@ -49,8 +47,6 @@ defmodule Polyn.Migration.BucketTest do
     Migration.Bucket.create(@bucket_name)
     Migration.Bucket.add_migration("1234", @bucket_name)
     Migration.Bucket.add_migration("5555", @bucket_name)
-
-    :timer.sleep(100)
 
     assert {:ok, %{"user.backend" => "[\"1234\",\"5555\"]"}} =
              Migration.Bucket.contents(@bucket_name)
