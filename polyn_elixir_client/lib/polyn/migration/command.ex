@@ -8,6 +8,7 @@ defmodule Polyn.Migration.Command do
 
   @doc "Actually apply the change to the server"
   def execute({id, :create_stream, opts}, migrator_state) do
+    opts = maybe_limit_replicas(opts)
     stream = struct(Stream, opts)
 
     Stream.create(Connection.name(), stream)
@@ -15,6 +16,7 @@ defmodule Polyn.Migration.Command do
   end
 
   def execute({id, :update_stream, opts}, migrator_state) do
+    opts = maybe_limit_replicas(opts)
     stream = update_stream_config(opts)
 
     Stream.update(Connection.name(), stream)
@@ -63,6 +65,24 @@ defmodule Polyn.Migration.Command do
       end
 
     Map.merge(info.config, Map.new(opts))
+  end
+
+  # In dev/test environments we likely will have less servers than in prod.
+  # If there's a config to limit replicas in a given environment we want
+  # to enforce that here for the migration
+  defp maybe_limit_replicas(opts) do
+    num_replicas = Keyword.get(opts, :num_replicas)
+
+    case {max_replicas(), num_replicas} do
+      {nil, _num} -> opts
+      {_max, nil} -> opts
+      {max, num} when num > max -> Keyword.put(opts, :num_replicas, max)
+      _ -> opts
+    end
+  end
+
+  defp max_replicas do
+    Application.get_env(:polyn, :max_replicas)
   end
 
   defp raise_migration_exception(id, state, reason) do

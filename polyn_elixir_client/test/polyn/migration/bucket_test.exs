@@ -29,10 +29,6 @@ defmodule Polyn.Migration.BucketTest do
                Application.get_env(:polyn, :source_root)
              )
 
-    # wait for purge/delete to complete. The delete is async right now.
-    # Can remove this once it is fixed in Jetstream lib
-    :timer.sleep(500)
-
     assert [] = Migration.Bucket.already_run_migrations(@bucket_name)
   end
 

@@ -3,7 +3,7 @@ defmodule Polyn.MixProject do
 
   @github "https://github.com/SpiffInc/polyn/tree/main/polyn_elixir_client"
 
-  def version, do: "0.6.1"
+  def version, do: "0.6.2"
 
   def project do
     [
@@ -59,7 +59,7 @@ defmodule Polyn.MixProject do
       {:uuid, "~> 1.1"},
       {:mox, "~> 1.0", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:jetstream, "~> 0.0.5"},
+      {:jetstream, "~> 0.0.7"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:polyn_naming, "~> 0.2.0"}
     ]

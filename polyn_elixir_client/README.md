@@ -72,6 +72,18 @@ config :polyn, :nats, %{
 }
 ```
 
+### Max Replicas
+
+When creating/updating streams in migrations you will want to specify how
+many replicas a stream should have. This can differ between environments.
+Your dev/test environments may only have one server running and so the
+num_replicas would be different. You can specify environments that should
+have limited replicas that differ than what you specify in your migrations
+
+```elixir
+config :polyn, :max_replicas, 1
+```
+
 ## Schema Store
 
 In order for `Polyn` to access schemas for validation you'll need a running `Polyn.SchemaStore` process. You can add one to your Supervision Tree like this:
