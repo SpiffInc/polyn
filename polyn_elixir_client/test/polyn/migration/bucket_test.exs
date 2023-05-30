@@ -32,8 +32,8 @@ defmodule Polyn.Migration.BucketTest do
     assert [] = Migration.Bucket.already_run_migrations(@bucket_name)
   end
 
-  # This could happen if one engineer creates a migration after another engineer,
-  # but get's their migration merged first.
+  # This could happen if engineer A creates a migration at a later time than
+  # engineer B, but engineer A gets their migration merged first.
   test "puts migrations in order if existing migration has later timestamp" do
     Migration.Bucket.create(@bucket_name)
     Migration.Bucket.add_migration("5555", @bucket_name)
