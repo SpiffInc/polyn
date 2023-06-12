@@ -98,8 +98,6 @@ defmodule Polyn.Migration.MigratorTest do
 
       run(context)
 
-      :timer.sleep(100)
-
       assert ["1234"] == Migration.Bucket.already_run_migrations()
       Jetstream.API.Stream.delete(Connection.name(), "other_stream")
     end
