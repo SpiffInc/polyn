@@ -32,7 +32,12 @@ defmodule Polyn.Migration.Runner do
     end
   end
 
-  defp build_command(%{direction: :down} = state, migration_id, command_name, opts) do
+  defp build_command(
+         %{direction: :down, migration_function: :change} = state,
+         migration_id,
+         command_name,
+         opts
+       ) do
     case reverse(command_name, opts) do
       {command_name, opts} ->
         {:ok, {migration_id, command_name, opts}}
@@ -62,6 +67,13 @@ defmodule Polyn.Migration.Runner do
   def update_running_migration_id(pid, id) do
     Agent.update(pid, fn state ->
       Map.put(state, :running_migration_id, id)
+    end)
+  end
+
+  @doc "Update the state to know which migration function is being executed based on direction"
+  def update_migration_function(pid, func) do
+    Agent.update(pid, fn state ->
+      Map.put(state, :migration_function, func)
     end)
   end
 
