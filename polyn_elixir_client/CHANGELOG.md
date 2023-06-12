@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.3
+
+* Adds `mix polyn.rollback` mix task
+* Adds `up/down` functions for Polyn migrations
+
 ## 0.6.2
 
 * Adds `:max_replicas` config option to allow for replica numbers to differ
