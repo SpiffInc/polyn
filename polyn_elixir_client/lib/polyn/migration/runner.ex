@@ -21,18 +21,21 @@ defmodule Polyn.Migration.Runner do
 
     state = get_state(pid)
 
-    command = build_command(state, running_migration_id, command_name, command_opts)
+    new_subcommand = build_subcommand(state, running_migration_id, command_name, command_opts)
 
-    case command do
-      {:ok, command} ->
-        concat_command(pid, command)
+    case new_subcommand do
+      {:ok, new_subcommand} ->
+        subcommands = Map.get(state.commands, running_migration_id, [])
+        subcommands = concat_subcommand(state, subcommands, new_subcommand)
+        commands = Map.put(state.commands, running_migration_id, subcommands)
+        update_commands(pid, commands)
 
       {:error, message} ->
         raise Polyn.Migration.Exception, message
     end
   end
 
-  defp build_command(
+  defp build_subcommand(
          %{direction: :down, migration_function: :change} = state,
          migration_id,
          command_name,
@@ -40,7 +43,7 @@ defmodule Polyn.Migration.Runner do
        ) do
     case reverse(command_name, opts) do
       {command_name, opts} ->
-        {:ok, {migration_id, command_name, opts}}
+        {:ok, {command_name, opts}}
 
       :error ->
         file = get_migration_file(migration_id, state)
@@ -51,14 +54,25 @@ defmodule Polyn.Migration.Runner do
     end
   end
 
-  defp build_command(_state, migration_id, command_name, opts) do
-    {:ok, {migration_id, command_name, opts}}
+  defp build_subcommand(_state, _migration_id, command_name, opts) do
+    {:ok, {command_name, opts}}
   end
 
-  defp concat_command(pid, command) do
-    Agent.update(pid, fn state ->
-      commands = Enum.concat(state.commands, [command])
+  defp concat_subcommand(
+         %{direction: :down, migration_function: :change},
+         subcommands,
+         new_subcommand
+       ) do
+    # We want the commands to be executed in reverse order when rolling back a `change` function
+    [new_subcommand | subcommands]
+  end
 
+  defp concat_subcommand(_state, subcommands, new_subcommand) do
+    Enum.concat(subcommands, [new_subcommand])
+  end
+
+  defp update_commands(pid, commands) do
+    Agent.update(pid, fn state ->
       Map.put(state, :commands, commands)
     end)
   end

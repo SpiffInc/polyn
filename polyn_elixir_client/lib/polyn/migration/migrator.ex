@@ -10,9 +10,9 @@ defmodule Polyn.Migration.Migrator do
   alias Polyn.Migration.Runner
 
   @typedoc """
-  Tuple of {migration_id, command_name, command_options}
+  Tuple of {command_name, command_options}
   """
-  @type command :: {integer(), atom(), any()}
+  @type command :: {atom(), any()}
 
   @typedoc """
   * `:direction` - Which direction to migrate
@@ -24,7 +24,7 @@ defmodule Polyn.Migration.Migrator do
   * `:migration_files` - The file names of migration files
   * `:migration_modules` - A list of tuples with the migration id and module code
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
-  * `:commands` - list of command tuples with
+  * `:commands` - map of migration_id and commands to run
   """
   @type t :: %__MODULE__{
           direction: :up | :down,
@@ -35,7 +35,7 @@ defmodule Polyn.Migration.Migrator do
           runner: pid() | nil,
           migration_files: [binary()],
           migration_modules: [{integer(), module()}],
-          commands: [command()],
+          commands: %{binary() => [command()]},
           already_run_migrations: [binary()]
         }
 
@@ -49,7 +49,7 @@ defmodule Polyn.Migration.Migrator do
     :runner,
     migration_files: [],
     migration_modules: [],
-    commands: [],
+    commands: %{},
     already_run_migrations: []
   ]
 
@@ -128,7 +128,6 @@ defmodule Polyn.Migration.Migrator do
         {:ok, files} ->
           files
           |> Enum.filter(&is_elixir_script?/1)
-          |> Enum.sort_by(&extract_migration_id/1)
 
         {:error, reason} ->
           Logger.info("No migrations found at #{migrations_dir}. #{inspect(reason)}")
@@ -190,7 +189,7 @@ defmodule Polyn.Migration.Migrator do
     Enum.each(state.migration_modules, fn {id, module} ->
       Runner.update_running_migration_id(pid, id)
       func = migration_function(module, state)
-      Runnner.update_migration_function(pid, func)
+      Runner.update_migration_function(pid, func)
       apply(module, func, [])
     end)
 
@@ -213,12 +212,10 @@ defmodule Polyn.Migration.Migrator do
     end
   end
 
-  defp execute_commands(%{commands: commands} = state) do
-    # Gather commmands by migration file so they are executed in order
-    Enum.group_by(commands, &elem(&1, 0))
-    |> Enum.sort_by(fn {key, _val} -> key end)
-    |> Enum.each(fn {id, commands} ->
-      Enum.each(commands_order(commands, state), &Migration.Command.execute(&1, state))
+  defp execute_commands(state) do
+    sort_commands(state)
+    |> Enum.each(fn {id, subcommands} ->
+      Enum.each(subcommands, &Migration.Command.execute(id, &1, state))
       # We only want to update the migration id in the bucket once we know
       # all its commands were successfully executed
       update_migration_bucket(state, id)
@@ -227,11 +224,14 @@ defmodule Polyn.Migration.Migrator do
     state
   end
 
-  defp commands_order(commands, %{direction: :down}) do
-    Enum.reverse(commands)
+  defp sort_commands(%{direction: :down, commands: commands}) do
+    sort_commands(%{commands: commands})
+    |> Enum.reverse()
   end
 
-  defp commands_order(commands, _state), do: commands
+  defp sort_commands(%{commands: commands}) do
+    Enum.sort_by(commands, fn {migration_id, _subcommands} -> migration_id end)
+  end
 
   defp update_migration_bucket(%{direction: :down}, id) do
     Migration.Bucket.remove_migration(id)
