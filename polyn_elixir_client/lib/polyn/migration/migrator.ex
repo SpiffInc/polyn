@@ -10,6 +10,13 @@ defmodule Polyn.Migration.Migrator do
   alias Polyn.Migration.Runner
 
   @typedoc """
+  Tuple of {command_name, command_options}
+  """
+  @type command :: {atom(), any()}
+
+  @typedoc """
+  * `:direction` - Which direction to migrate
+  * `:migrations_function` - The function to run inside the migration module (e.g. `change`, `up`, `down`)
   * `:migrations_dir` - Location of migration files
   * `:running_migration_id` - The timestamp/id of the migration file being run. Taken from the beginning of the file name
   * `:migration_bucket_info` - The Stream info for the migration KV bucket
@@ -17,33 +24,39 @@ defmodule Polyn.Migration.Migrator do
   * `:migration_files` - The file names of migration files
   * `:migration_modules` - A list of tuples with the migration id and module code
   * `:already_run_migrations` - Migrations we've determined have already been executed on the server
-  * `:commands` - list of tuples with {migration_id, command_name, command_options}
+  * `:commands` - map of migration_id and commands to run
   """
   @type t :: %__MODULE__{
+          direction: :up | :down,
+          migration_function: :change | :up | :down,
           migrations_dir: binary(),
           running_migration_id: non_neg_integer() | nil,
           migration_bucket_info: Jetstream.API.Stream.info() | nil,
           runner: pid() | nil,
           migration_files: [binary()],
           migration_modules: [{integer(), module()}],
-          commands: [{integer(), atom(), any()}],
+          commands: %{binary() => [command()]},
           already_run_migrations: [binary()]
         }
 
   # Holds the state of the migration as we move through migration steps
   defstruct [
+    :direction,
+    :migration_function,
     :running_migration_id,
     :migrations_dir,
     :migration_bucket_info,
     :runner,
     migration_files: [],
     migration_modules: [],
-    commands: [],
+    commands: %{},
     already_run_migrations: []
   ]
 
   def new(opts \\ []) do
-    opts = Keyword.put_new(opts, :migrations_dir, migrations_dir())
+    opts =
+      Keyword.put_new(opts, :migrations_dir, migrations_dir())
+      |> Keyword.put_new(:direction, :up)
 
     struct!(__MODULE__, opts)
   end
@@ -57,8 +70,13 @@ defmodule Polyn.Migration.Migrator do
 
   @doc """
   Entry point for starting migrations
+
+  ## Options
+
+  * `:migrations_dir` - Location of migration files
+  * `:direction` - `:up` or `:down` to run migrations in a specific direction. Defaults to `:up`
   """
-  @spec run(opts :: [{:migrations_dir, binary()}]) :: :ok
+  @spec run(opts :: [{:migrations_dir, binary()} | {:direction, :down | :up}]) :: :ok
   @spec run() :: :ok
   def run(opts \\ []) do
     # The Gnat ConnectionSupervisor startup is non-blocking, so we
@@ -71,6 +89,7 @@ defmodule Polyn.Migration.Migrator do
     |> create_migration_bucket()
     |> get_already_run_migrations()
     |> get_migration_files()
+    |> filter_applicable_files()
     |> compile_migration_files()
     |> get_migration_commands()
     |> execute_commands()
@@ -109,8 +128,6 @@ defmodule Polyn.Migration.Migrator do
         {:ok, files} ->
           files
           |> Enum.filter(&is_elixir_script?/1)
-          |> filter_already_ran(state)
-          |> Enum.sort_by(&extract_migration_id/1)
 
         {:error, reason} ->
           Logger.info("No migrations found at #{migrations_dir}. #{inspect(reason)}")
@@ -124,11 +141,29 @@ defmodule Polyn.Migration.Migrator do
     String.ends_with?(file_name, ".exs")
   end
 
-  defp filter_already_ran(files, %{already_run_migrations: already_run_migrations}) do
-    Enum.reject(files, fn file ->
-      id = extract_migration_id(file)
-      Enum.member?(already_run_migrations, id)
-    end)
+  defp filter_applicable_files(%{direction: :up} = state) do
+    %{already_run_migrations: already_run_migrations, migration_files: files} = state
+
+    files =
+      Enum.reject(files, fn file ->
+        id = extract_migration_id(file)
+        Enum.member?(already_run_migrations, id)
+      end)
+
+    Map.put(state, :migration_files, files)
+  end
+
+  defp filter_applicable_files(%{direction: :down} = state) do
+    %{already_run_migrations: already_run_migrations, migration_files: files} = state
+
+    last_run = List.last(already_run_migrations)
+
+    last_run_file =
+      Enum.find(files, fn file ->
+        extract_migration_id(file) == last_run
+      end)
+
+    Map.put(state, :migration_files, [last_run_file])
   end
 
   defp compile_migration_files(%{migration_files: files, migrations_dir: migrations_dir} = state) do
@@ -153,7 +188,9 @@ defmodule Polyn.Migration.Migrator do
 
     Enum.each(state.migration_modules, fn {id, module} ->
       Runner.update_running_migration_id(pid, id)
-      module.change()
+      func = migration_function(module, state)
+      Runner.update_migration_function(pid, func)
+      apply(module, func, [])
     end)
 
     state = Runner.get_state(pid) |> Map.put(:running_migration_id, nil)
@@ -161,17 +198,46 @@ defmodule Polyn.Migration.Migrator do
     state
   end
 
-  defp execute_commands(%{commands: commands} = state) do
-    # Gather commmands by migration file so they are executed in order
-    Enum.group_by(commands, &elem(&1, 0))
-    |> Enum.sort_by(fn {key, _val} -> key end)
-    |> Enum.each(fn {id, commands} ->
-      Enum.each(commands, &Migration.Command.execute(&1, state))
-      # We only want to put the migration id into the stream once we know
+  defp migration_function(module, %{direction: direction}) do
+    cond do
+      function_exported?(module, direction, 0) ->
+        direction
+
+      function_exported?(module, :change, 0) ->
+        :change
+
+      true ->
+        raise Polyn.Migration.Exception,
+              "Migration module #{module} does not define a #{inspect(direction)}/0 or change/0 function"
+    end
+  end
+
+  defp execute_commands(state) do
+    sort_commands(state)
+    |> Enum.each(fn {id, subcommands} ->
+      Enum.each(subcommands, &Migration.Command.execute(id, &1, state))
+      # We only want to update the migration id in the bucket once we know
       # all its commands were successfully executed
-      Migration.Bucket.add_migration(id)
+      update_migration_bucket(state, id)
     end)
 
     state
+  end
+
+  defp sort_commands(%{direction: :down, commands: commands}) do
+    sort_commands(%{commands: commands})
+    |> Enum.reverse()
+  end
+
+  defp sort_commands(%{commands: commands}) do
+    Enum.sort_by(commands, fn {migration_id, _subcommands} -> migration_id end)
+  end
+
+  defp update_migration_bucket(%{direction: :down}, id) do
+    Migration.Bucket.remove_migration(id)
+  end
+
+  defp update_migration_bucket(_state, id) do
+    Migration.Bucket.add_migration(id)
   end
 end

@@ -300,6 +300,121 @@ defmodule Polyn.Migration.MigratorTest do
     end
   end
 
+  describe "rollback" do
+    test "reverse create_stream", context do
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+
+      assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
+      assert [] == Migration.Bucket.already_run_migrations()
+    end
+
+    test "reverse create_consumer", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      add_migration_file(context.migrations_dir, "1234_create_consumer.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_consumer(stream_name: "#{@common_stream_name}", durable_name: "#{@common_consumer_name}")
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+
+      assert {:error, %{"code" => 404}} =
+               Consumer.info(Connection.name(), @common_stream_name, @common_consumer_name)
+
+      assert [] == Migration.Bucket.already_run_migrations()
+    end
+
+    test "reverse change/0 function goes in opposite order", context do
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def change do
+          create_stream(name: "#{@common_stream_name}", subjects: ["test_subject"])
+          create_consumer(stream_name: "#{@common_stream_name}", durable_name: "#{@common_consumer_name}")
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+
+      assert {:error, %{"code" => 404}} = Stream.info(Connection.name(), @common_stream_name)
+      assert [] == Migration.Bucket.already_run_migrations()
+    end
+
+    test "raises for reversing delete_stream", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      add_migration_file(context.migrations_dir, "1234_delete_stream.exs", """
+      defmodule ExampleDeleteStream do
+        import Polyn.Migration
+
+        def change do
+          delete_stream("#{@common_stream_name}")
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+
+      assert_raise(Polyn.Migration.Exception, fn ->
+        Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+      end)
+    end
+
+    test "reverse update_stream", context do
+      Stream.create(Connection.name(), %Stream{
+        name: @common_stream_name,
+        subjects: ["test_subject"]
+      })
+
+      add_migration_file(context.migrations_dir, "1234_create_stream.exs", """
+      defmodule ExampleCreateStream do
+        import Polyn.Migration
+
+        def up do
+          update_stream(name: "#{@common_stream_name}", description: "test description")
+        end
+
+        def down do
+          update_stream(name: "#{@common_stream_name}", description: nil)
+        end
+      end
+      """)
+
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :up)
+      Migrator.run(migrations_dir: context.migrations_dir, direction: :down)
+
+      assert {:ok, info} = Stream.info(Connection.name(), @common_stream_name)
+      assert info.config.description == nil
+      assert [] == Migration.Bucket.already_run_migrations()
+    end
+  end
+
   defp add_migration_file(dir, file_name, contents) do
     File.write!(Path.join(dir, file_name), contents)
   end

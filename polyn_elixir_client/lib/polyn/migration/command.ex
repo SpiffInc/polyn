@@ -7,7 +7,7 @@ defmodule Polyn.Migration.Command do
   alias Polyn.Migration
 
   @doc "Actually apply the change to the server"
-  def execute({id, :create_stream, opts}, migrator_state) do
+  def execute(id, {:create_stream, opts}, migrator_state) do
     opts = maybe_limit_replicas(opts)
     stream = struct(Stream, opts)
 
@@ -15,7 +15,7 @@ defmodule Polyn.Migration.Command do
     |> handle_execute_result(id, migrator_state)
   end
 
-  def execute({id, :update_stream, opts}, migrator_state) do
+  def execute(id, {:update_stream, opts}, migrator_state) do
     opts = maybe_limit_replicas(opts)
     stream = update_stream_config(opts)
 
@@ -23,19 +23,19 @@ defmodule Polyn.Migration.Command do
     |> handle_execute_result(id, migrator_state)
   end
 
-  def execute({id, :delete_stream, stream_name}, migrator_state) do
+  def execute(id, {:delete_stream, stream_name}, migrator_state) do
     Stream.delete(Connection.name(), stream_name)
     |> handle_execute_result(id, migrator_state)
   end
 
-  def execute({id, :create_consumer, opts}, migrator_state) do
+  def execute(id, {:create_consumer, opts}, migrator_state) do
     consumer = struct(Consumer, opts)
 
     Consumer.create(Connection.name(), consumer)
     |> handle_execute_result(id, migrator_state)
   end
 
-  def execute({id, :delete_consumer, opts}, migrator_state) do
+  def execute(id, {:delete_consumer, opts}, migrator_state) do
     stream_name = Keyword.get(opts, :stream_name)
     durable_name = Keyword.get(opts, :durable_name)
 

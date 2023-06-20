@@ -47,7 +47,7 @@ The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudeven
 define that domain like this:
 
 ```elixir
-config :polyn, :domain, "app.spiff"
+config :polyn, :domain, "com.my_app"
 ```
 
 ### Message Source Root
@@ -117,6 +117,23 @@ end
 ```
 
 Inside the `change` function you can use the functions available in `Polyn.Migration` to update the NATS server. You can then run `mix polyn.migrate` to apply your changes.
+
+### Rollback
+
+You can rollback a change using `mix polyn.rollback`. Not all `Polyn.Migration` functions can be auto rolled back
+in a `change/0` function. Instead you will have to define `up/down` functions explicitly.
+
+```elixir
+defmodule Polyn.Migrations.UpdateUserStream do
+  import Polyn.Migration
+
+  def up do
+  end
+
+  def down do
+  end
+end
+```
 
 ### Tracking Previously Run Migrations
 
