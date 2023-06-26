@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.4
+
+* Change from `uuid` lib to `elixir_uuid` lib.
+
 ## 0.6.3
 
 * Adds `mix polyn.rollback` mix task
