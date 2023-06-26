@@ -56,7 +56,7 @@ defmodule Polyn.MixProject do
       {:opentelemetry_api, "~> 1.0"},
       # This will allow us to actually test and inspect the collected spans in a test
       {:opentelemetry, "~> 1.0", only: :test},
-      {:uuid, "~> 1.1"},
+      {:elixir_uuid, "~> 1.2"},
       {:mox, "~> 1.0", only: :test},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:jetstream, "~> 0.0.7"},
