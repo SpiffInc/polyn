@@ -26,5 +26,4 @@
   "opentelemetry_api": {:hex, :opentelemetry_api, "1.1.0", "156366bfbf249f54daf2626e087e29ad91201eab670993fd9ae1bd278d03a096", [:mix, :rebar3], [], "hexpm", "e0d0b49e21e5785da675c97104c385283cae84fcc0d8522932a5dcf55489ead1"},
   "polyn_naming": {:hex, :polyn_naming, "0.2.0", "6db9d12774f08d8ff6fd111a838ccfee8e6ae99eb9532f6bf823772c0b4f1aa7", [:mix], [], "hexpm", "e6911b8acd76143afcb20d742316bbf36bd0ded3770a6ea50441523db813a205"},
   "telemetry": {:hex, :telemetry, "1.2.1", "68fdfe8d8f05a8428483a97d7aab2f268aaff24b49e0f599faa091f1d4e7f61c", [:rebar3], [], "hexpm", "dad9ce9d8effc621708f99eac538ef1cbe05d6a874dd741de2e689c47feafed5"},
-  "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm", "c790593b4c3b601f5dc2378baae7efaf5b3d73c4c6456ba85759905be792f2ac"},
 }

@@ -3,7 +3,7 @@ defmodule Polyn.MixProject do
 
   @github "https://github.com/SpiffInc/polyn/tree/main/polyn_elixir_client"
 
-  def version, do: "0.6.4"
+  def version, do: "0.6.5"
 
   def project do
     [
@@ -11,8 +11,6 @@ defmodule Polyn.MixProject do
       version: version(),
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
-      elixirc_options: [debug_info: Mix.env() == :dev],
-      start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
       name: "Polyn",
@@ -42,7 +40,7 @@ defmodule Polyn.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :eex],
       mod: {Polyn.Application, []}
     ]
   end
