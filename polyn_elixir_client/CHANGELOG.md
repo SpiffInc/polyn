@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.5
+
+* Fix bug where dialyzer couldn't find metadata, because `:debug_info` was turned off.
+
 ## 0.6.4
 
 * Change from `uuid` lib to `elixir_uuid` lib.
